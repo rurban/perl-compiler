@@ -72,6 +72,7 @@ sub typename {
     my $typename = uc($name);
     $typename = 'UNOP_AUX'  if $typename eq 'UNOPAUX';
     $typename = 'MyPADNAME' if $typename eq 'PADNAME';
+    $typename = 'SHARED_HE' if $typename eq 'SHAREDHE';
 
     return $typename;
 }

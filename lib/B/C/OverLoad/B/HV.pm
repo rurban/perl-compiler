@@ -18,10 +18,11 @@ use strict;
 
 use B qw/cstring SVf_READONLY SVf_PROTECT SVs_OBJECT SVf_OOK SVf_AMAGIC/;
 use B::C::Config;
-use B::C::File qw/init xpvhvsect svsect decl init1 init2/;
+use B::C::File qw/init xpvhvsect svsect sharedhek decl init1 init2/;
 use B::C::Helpers qw/mark_package read_utf8_string strlen_flags is_using_mro/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 use B::C::Save qw/savestashpv/;
+use B::C::Save::Hek qw/save_shared_he/;
 
 my ($swash_ToCf);
 
@@ -70,16 +71,16 @@ sub save {
             # If the stash name is empty xhv_name_count is negative, and names[0] should
             # be already set. but we rather write it.
             init()->no_split;
-            my $hv_max = $hv->MAX + 1;
+            my $hv_max_plus_one = $hv->MAX + 1;
 
             # unshift @enames, $name if $name_count < 0; # stashpv has already set names[0]
             init()->add(
                 "if (!SvOOK($sym)) {",    # hv_auxinit is not exported
                 "  HE **a;",
                 "#ifdef PERL_USE_LARGE_HV_ALLOC",
-                sprintf( "  Newxz(a, PERL_HV_ARRAY_ALLOC_BYTES(%d) + sizeof(struct xpvhv_aux), HE*);", $hv_max ),
+                sprintf( "  Newxz(a, PERL_HV_ARRAY_ALLOC_BYTES(%d) + sizeof(struct xpvhv_aux), HE*);", $hv_max_plus_one ),
                 "#else",
-                sprintf( "  Newxz(a, %d + sizeof(struct xpvhv_aux), HE*);", $hv_max ),
+                sprintf( "  Newxz(a, %d + sizeof(struct xpvhv_aux), HE*);", $hv_max_plus_one ),
                 "#endif",
                 "  SvOOK_on($sym);",
                 "}",
@@ -149,18 +150,15 @@ sub save {
     # XXX failed at 16 (tied magic) for %main::
     if ( !$is_stash and ( $hv->FLAGS & SVf_OOK ) ) {
         $sym = sprintf( "&sv_list[%d]", svsect()->index );
-        my $hv_max = $hv->MAX + 1;
+        my $hv_max_plus_one = $hv->MAX + 1;
 
         # riter required, new _aux struct at the end of the HvARRAY. allocate ARRAY also.
         init()->add(
             "{\tHE **a;",
             "#ifdef PERL_USE_LARGE_HV_ALLOC",
-            sprintf(
-                "\tNewxz(a, PERL_HV_ARRAY_ALLOC_BYTES(%d) + sizeof(struct xpvhv_aux), HE*);",
-                $hv_max
-            ),
+            sprintf( "\tNewxz(a, PERL_HV_ARRAY_ALLOC_BYTES(%d) + sizeof(struct xpvhv_aux), HE*);", $hv_max_plus_one ),
             "#else",
-            sprintf( "\tNewxz(a, %d + sizeof(struct xpvhv_aux), HE*);", $hv_max ),
+            sprintf( "\tNewxz(a, %d + sizeof(struct xpvhv_aux), HE*);", $hv_max_plus_one ),
             "#endif",
             "\tHvARRAY($sym) = a;",
             sprintf( "\tHvRITER_set(%s, %d);", $sym, $hv->RITER ),
@@ -177,6 +175,7 @@ sub save {
 
     # do not need ARRAY_utf8: 5.20 came up with the utf8 fix
     my @contents = $hv->ARRAY;
+
     # protect against recursive self-reference
     # i.e. with use Moose at stash Class::MOP::Class::Immutable::Trait
     # value => rv => cv => ... => rv => same hash
@@ -187,18 +186,17 @@ sub save {
         local $B::C::const_strings = $B::C::const_strings;
         my ( $i, $length );
         $length = scalar(@contents);
-        for ( $i = 1; $i < @contents; $i += 2 ) {
-            my $key = $contents[ $i - 1 ];                                       # string only
-            my $sv  = $contents[$i];
-            WARN( "HV recursion? with $fullname\{$key\} -> %s\n", $sv->RV )
-              if ref($sv) eq 'B::RV'
 
-              #and $sv->RV->isa('B::CV')
-              and defined objsym($sv)
-              and debug('hv');
+        # Walk the values and save them into symbols
+        for ( $i = 1; $i < @contents; $i += 2 ) {
+            my $key = $contents[ $i - 1 ];    # string only
+            my $sv  = $contents[$i];
+
+            WARN( "HV recursion? with $fullname\{$key\} -> %s\n", $sv->RV ) if ref($sv) eq 'B::RV' and defined objsym($sv) and debug('hv');
+
             if ($is_stash) {
                 if ( ref($sv) eq "B::GV" and $sv->NAME =~ /::$/ ) {
-                    $sv = bless $sv, "B::STASHGV";                               # do not expand stash GV's only other stashes
+                    $sv = bless $sv, "B::STASHGV";    # do not expand stash GV's only other stashes
                     debug( hv => "saving STASH $fullname" . '{' . $key . "}" );
                     $contents[$i] = $sv->save( $fullname . '{' . $key . '}' );
                 }
@@ -211,44 +209,61 @@ sub save {
             }
             else {
                 debug( hv => "saving HV \$" . $fullname . '{' . $key . "}" );
-                $contents[$i] = $sv->save( $fullname . '{' . $key . '}' );
+                $contents[$i] = $sv->save( $fullname . '{' . $key . '}' );    # Turn the hash value into a symbol
             }
         }
-        if ($length) {    # there may be skipped STASH symbols
+
+        my $hv_total_keys = 0;
+        # If we didn't just clear all the values.
+        if ($length) {                                                        # there may be skipped STASH symbols
             init()->no_split;
             init()->add(
                 "{",
                 sprintf( "\tHV *hv = %s%s;", $sym =~ /^hv|\(HV/ ? '' : '(HV*)', $sym )
             );
+            init()->add(
+                "\tchar *array;",
+                sprintf( "\tNewxz (array, PERL_HV_ARRAY_ALLOC_BYTES (%d), char);", $hv_max_plus_one ),
+                sprintf( "\tHvARRAY (%s) = (HE **) array;",                        $sym ),
+                "\tHE * entry;";
+                "\tHE **oentry;";
+            );
+
             while (@contents) {
                 my ( $key, $value ) = splice( @contents, 0, 2 );
-                if ($value) {
-                    $value = "(SV*)$value" if $value !~ /^&sv_list/;
 
-                    my ( $cstring, $cur, $utf8 ) = strlen_flags($key);
-                    $cur *= -1 if $utf8;
+                next unless defined $value;    # Skip values which we set to undef and didn't save the symbol.
 
-                    # issue 272: if SvIsCOW(sv) && SvLEN(sv) == 0 => sharedhek (key == "")
-                    # >= 5.10: SvSHARED_HASH: PV offset to hek_hash
+                # Insert each key into the hash.
+                {
+                    my $hek_sym = save_shared_he($key);
                     init()->add(
-                        sprintf(
-                            "\thv_store(hv, %s, %d, %s, %s);",
-                            $cstring, $cur, $value, 0
-                        )
-                    );    # !! randomized hash keys
-                    debug( hv => "  HV key \"%s\" = %s\n", $key, $value );
-                    if (   !$swash_ToCf
-                        and $fullname =~ /^utf8::SWASHNEW/
-                        and $cstring eq '"utf8\034unicore/To/Cf.pl\0340"'
-                        and $cur == 23 ) {
-                        $swash_ToCf = $value;
-                        verbose("Found PL_utf8_tofold ToCf swash $value");
-                    }
+                        "",
+                        "entry = new_HE",
+                        sprintf( "HeKEY_hek (entry) = %s", $hek_sym ),
+                        sprintf( "HeVAL (entry) = %s;",    $value ),
+                        sprintf( "oentry = &(HvARRAY (%s))[HEK_HASH(%s) & (I32) %d];", $sym, $hek_sym, $hv_max_plus_one ),
+                        "HeNEXT(entry) = *oentry;",
+                        "*oentry = entry;"
+                    );
+                    $hv_total_keys++;
+                }
+
+                # issue 272: if SvIsCOW(sv) && SvLEN(sv) == 0 => sharedhek (key == "")
+                # >= 5.10: SvSHARED_HASH: PV offset to hek_hash
+
+                debug( hv => "  HV key \"%s\" = %s\n", $key, $value );
+                if (   !$swash_ToCf
+                    and $fullname =~ /^utf8::SWASHNEW/
+                    and $cstring eq '"utf8\034unicore/To/Cf.pl\0340"'
+                    and $cur == 23 ) {
+                    $swash_ToCf = $value;
+                    verbose("Found PL_utf8_tofold ToCf swash $value");
                 }
             }
             init()->add("}");
             init()->split;
-            init()->add( sprintf( "HvTOTALKEYS(%s) = %d;", $sym, $length / 2 ) );
+            init()->add( sprintf( "HvTOTALKEYS(%s) = %d;", $sym, $hv_total_keys ) );
         }
     }
     else {    # empty contents still needs to set keys=0

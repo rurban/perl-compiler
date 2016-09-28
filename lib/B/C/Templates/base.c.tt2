@@ -22,6 +22,7 @@
 #define Perl_pp_mapstart Perl_pp_grepstart
 #undef OP_MAPSTART
 #define OP_MAPSTART OP_GREPSTART
+#define IMMORTAL_PL_strtab 0x7ffffff
 
 #ifdef BROKEN_STATIC_REDECL
 #define Static extern
@@ -135,7 +136,11 @@ struct my_padname_with_str {
 #endif
     char               xpadn_str[60]; /* longer lexical upval names are forbidden for now */
 };
+
+/* Missing type defs in perl so we'll make our own. */
 typedef struct my_padname_with_str MyPADNAME;
+typedef struct shared_he SHARED_HE;
+
 
 /*
     Tricky hack for -fcog since 5.10 on !c99 compilers required. We need a char* as
@@ -253,6 +258,32 @@ Static [% section.$sect.typename() %] [% section.$sect.name() %]_list[[% lines %
 [% END %]
 
 static void perl_init0(pTHX) { /* fixup_ppaddr */
+
+    PL_strtab->xhv_keys = [% PL_strtab_max %];
+    hsplit (PL_strtab, PL_strtab->xhv_max + 1, [% PL_strtab_max %]);
+    assert(PL_strtab->xhv_keys == [% PL_strtab_max %]);
+    {
+        int i;
+        HE * entry;
+        HE **oentry;
+        HEK * hek_struct;
+
+        for(int i = 0; i < [% section.sharedhe.index %]; i++) {
+            entry = sharedhe_list[i]->shared_he_he;
+            hek_struct = sharedhe_list[i]->shared_he_hek;
+
+            HeKEY_hek(entry) = (char*) sharedhe_list[i] + sizeof(struct he);
+            PERL_HASH (hek_struct->hek_hash,
+                       hek_struct->hek_key,
+                       hek_struct->hek_len);
+
+            /* Insert the hes */
+            oentry = &(HvARRAY (PL_strtab))[HEK_HASH(hek_struct) & (I32) [% PL_strtab_max %]];
+            HeNEXT(entry) = *oentry;
+            *oentry = entry;
+        }
+    }
+
 [% section.init0.output( "    %s\n" ) %]
 };
 

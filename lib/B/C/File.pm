@@ -42,7 +42,7 @@ sub code_section_names {
 
 sub struct_names {
     return qw( xpv xpvav xpvhv xpvcv padlist padname padnamelist
-      xpviv xpvuv xpvnv xpvmg xpvlv xrv xpvbm xpvio sv);
+      xpviv xpvuv xpvnv xpvmg xpvlv xrv xpvbm xpvio sv sharedhe);
 }
 
 sub init_section_names { return qw /init init1 init2/ }
