@@ -85,7 +85,7 @@ sub save_shared_he {
             ) );
 
 
-    return $saved_shared_hash{$key} = sprintf( "&sharedhe_list[%d]", sharedhe()->index - 1 );
+    return $saved_shared_hash{$key} = sprintf( "&sharedhe_list[%d]", sharedhe()->index );
 }
 
 1;
