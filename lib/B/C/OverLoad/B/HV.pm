@@ -200,6 +200,9 @@ sub save {
             sprintf( "HvARRAY (%s) = (HE **) array;", $sym ),
         );
 
+        #my $i = 0;
+        #my %hash_kv = ( map { $i++, $_ } @hash_content_to_save );
+
         foreach my $elt (@hash_content_to_save) {    # loop on the array # FIXME to improve: add randomization
             my ( $key, $value ) = @$elt;
 
@@ -232,7 +235,7 @@ EOS
             # issue 272: if SvIsCOW(sv) && SvLEN(sv) == 0 => sharedhek (key == "")
             # >= 5.10: SvSHARED_HASH: PV offset to hek_hash
 
-            debug( hv => "  HV key \"%s\" = %s\n", $key, $value );
+            debug( hv => q{ HV key "%s" = %s}, $key, $value );
 
             #if (   !$swash_ToCf
             #    and $fullname =~ /^utf8::SWASHNEW/
@@ -248,34 +251,12 @@ EOS
 
             # hv_auxinit is doing the malloc for us, could use Newxz if not public
             init()->add( sprintf( "HvRITER_set(%s, %d);", $sym, $hv->RITER ) ),    # could use -1 ?
-              sprintf( "SvOOK_on(%s);", $sym ),
         }
-
-=pod
-            init()->add(
-                "if (!SvOOK($sym)) {",    # hv_auxinit is not exported
-                "  HE **a;",
-                "#ifdef PERL_USE_LARGE_HV_ALLOC",
-                sprintf( "  Newxz(a, PERL_HV_ARRAY_ALLOC_BYTES(%d) + sizeof(struct xpvhv_aux), HE*);", $hv_max_plus_one ),
-                "#else",
-                sprintf( "  Newxz(a, %d + sizeof(struct xpvhv_aux), HE*);", $hv_max_plus_one ),
-                "#endif",
-                "  SvOOK_on($sym);",
-                "}",
-                "{",
-                "  struct xpvhv_aux *aux = HvAUX($sym);",
-                sprintf( "  Newx(aux->xhv_name_u.xhvnameu_names, %d, HEK*);", scalar $name_count ),
-                sprintf( "  aux->xhv_name_count = %d;",                       $name_count )
-=cut
 
         init()->add("}");
         init()->split;
     }
 
-    # else {    # empty contents still needs to set keys=0
-    #           # test 36, 140
-    #     #init()->add("HvTOTALKEYS($sym) = 0;");
-    # }
     $magic = $hv->save_magic($fullname);
     init()->add("SvREADONLY_on($sym);") if $hv->FLAGS & SVf_READONLY;
     if ( $magic =~ /c/ ) {
