@@ -56,6 +56,7 @@ op/override.t                COMPAT    crazy test which override CORE::GLOBAL::r
 op/postfixderef.t            TESTS     BC issue #302 - quoted eval scope doesn't honor use feature.
 op/readline.t                TESTS     BC issue #269 - Modification of a read-only value attempted
 op/ref.t                     TESTS     BC issue #300 - PVFM not compiled
+op/sprintf2.t                SKIP      BC flapping tests ??
 op/stash.t                   TESTS     BC issue #221 - delete is not anonymizing the returned sub
 op/sub_lval.t                TESTS     BC issue #277 - sub declaration with :lvalue should apply it to XSUBs
 op/svleak.t                  COMPAT    This test uses XS::APItest, which we don't install during perl install?
