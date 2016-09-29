@@ -224,7 +224,7 @@ sub save {
                 "char *array;",
                 "HE *entry;",
                 "HE **oentry;",
-                sprintf( "\tHV *hv = %s%s;", $sym =~ /^hv|\(HV/ ? '' : '(HV*)', $sym ),
+                sprintf( "HV *hv = %s%s;", $sym =~ /^hv|\(HV/ ? '' : '(HV*)', $sym ),
                 sprintf( "Newxz (array, PERL_HV_ARRAY_ALLOC_BYTES (%d), char);", $hv_max_plus_one ),
                 sprintf( "HvARRAY (%s) = (HE **) array;",                        $sym ),
             );
