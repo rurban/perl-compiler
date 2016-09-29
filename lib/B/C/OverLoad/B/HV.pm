@@ -236,15 +236,15 @@ sub save {
 
                 # Insert each key into the hash.
                 {
-                    my $hek_sym = save_shared_he($key);
+                    my $hek_sym        = save_shared_he($key);
                     my $hek_sym_simple = $hek_sym;
                     $hek_sym_simple =~ s{^&}{};
                     init()->add(
                         "",
                         "entry = (HE*)safemalloc(sizeof(HE));",
-                        sprintf( "HeKEY_hek(entry) = &(%s.shared_he_hek);", $hek_sym_simple ),
-                        sprintf( "HeVAL (entry) = %s;",    $value ),
-                        sprintf( "oentry = &(HvARRAY (%s))[HEK_HASH(&(%s.shared_he_hek)) & (I32) %d];", $sym, $hek_sym_simple, $hv_max_plus_one ),
+                        sprintf( "HeKEY_hek(entry) = &(%s->shared_he_hek);", $hek_sym_simple ),
+                        sprintf( "HeVAL (entry) = %s;",                      $value ),
+                        sprintf( "oentry = &(HvARRAY (%s))[HEK_HASH(&(%s->shared_he_hek)) & (I32) %d];", $sym, $hek_sym_simple, $hv_max_plus_one ),
                         "HeNEXT(entry) = *oentry;",
                         "*oentry = entry;"
                     );

@@ -66,26 +66,16 @@ sub save_shared_he {
 
     return $saved_shared_hash{$key} if $saved_shared_hash{$key};
 
-    my $utf8;
-    ( undef, undef, $utf8 ) = strlen_flags($key);
-    my ( $savesym, $cur, $len ) = savepv($key);    # initialize with empty string
-    $cur *= -1 if $utf8;
+    my ( $cstr, $cur, $utf8 ) = strlen_flags($key);
 
-    sharedhe()->comment("
-         he shared_he_he   { (HE*) hent_next, (HEK*), hent_hek, (Size_t) hent_refcount }, 
-         hek shared_he_hek { (U32) hek_hash, (I32) hek_len, char hek_key[1] = { (char*) hek_key, (char) hek_flags } } 
-    ");
+    #$cur *= -1 if $utf8;
 
-    sharedhe()->add( 
-        sprintf( "
-            .shared_he_he={ NULL, NULL, {.hent_refcount=IMMORTAL_PL_strtab} },
-            .shared_he_hek={ (U32) 0, (I32) %d, .hek_key[0] = '?' }
-            ",  $cur, $savesym
-            #$utf8 ? 1 : 0 
-            ) );
+    my $index = sharedhe()->index() + 1;
 
+    sharedhe()->add( sprintf( "STATIC_SHARED_HE_ALLOC(%d, %d, %s, %d);", $index, $cur, $cstr, $utf8 ? 1 : 0 ) );
+    sharedhe()->{'keylen'}->[$index] = $cur;
 
-    return $saved_shared_hash{$key} = sprintf( "&sharedhe_list[%d]", sharedhe()->index );
+    return $saved_shared_hash{$key} = sprintf( "&sharedhe_list[%d]", $index );
 }
 
 1;
