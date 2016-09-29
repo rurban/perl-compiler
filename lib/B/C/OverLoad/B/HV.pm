@@ -185,8 +185,7 @@ sub save {
     $sym = savesym( $hv, "(HV*)&sv_list[$sv_list_index]" ) unless $is_stash;
     push @B::C::static_free, $sym if $hv->FLAGS & SVs_OBJECT;
 
-    #if (@hash_content_to_save) {
-    { # add hash content even if the hash is empty [ maybe only for %INC ??? ]
+    {    # add hash content even if the hash is empty [ maybe only for %INC ??? ]
         init()->no_split;
         init()->add(
             "{",
@@ -201,17 +200,23 @@ sub save {
             sprintf( "HvARRAY (%s) = (HE **) array;", $sym ),
         );
 
-        #my $i = 0;
-        #my %hash_kv = ( map { $i++, $_ } @hash_content_to_save );
+        my @hash_elements;
+        {
+            my $i = 0;
+            my %hash_kv = ( map { $i++, $_ } @hash_content_to_save );
+            @hash_elements = values %hash_kv;    # randomize the hash eleement order to the buckets [ when coliding ]
+        }
 
-        foreach my $elt (@hash_content_to_save) {    # loop on the array # FIXME to improve: add randomization
+        # uncomment for saving hashes in a consistent order while debugging
+        #@hash_elements = @hash_content_to_save;
+
+        foreach my $elt (@hash_elements) {
             my ( $key, $value ) = @$elt;
 
             # Insert each key into the hash.
-            {
-                my $hek_sym = save_shared_he($key);
+            my $hek_sym = save_shared_he($key);
 
-                my $C_CODE = <<'EOS';
+            my $C_CODE = <<'EOS';
 
                     entry            = (HE*) safemalloc(sizeof(HE));
                     HeKEY_hek(entry) = &(~HEK_SYM~->shared_he_hek);
@@ -221,37 +226,22 @@ sub save {
                     *oentry          = entry;
 EOS
 
-                # lazy template
-                my %macro = (
-                    HEK_SYM => $hek_sym,
-                    VALUE   => $value,
-                    SYM     => $sym,
-                    MAX     => $max,
-                );
-                $C_CODE =~ s{(~([^~]+)~)}{$macro{$2}}g;
+            # lazy template
+            my %macro = (
+                HEK_SYM => $hek_sym,
+                VALUE   => $value,
+                SYM     => $sym,
+                MAX     => $max,
+            );
+            $C_CODE =~ s{(~([^~]+)~)}{$macro{$2}}g;
 
-                init()->add($C_CODE);
-            }
-
-            # issue 272: if SvIsCOW(sv) && SvLEN(sv) == 0 => sharedhek (key == "")
-            # >= 5.10: SvSHARED_HASH: PV offset to hek_hash
+            init()->add($C_CODE);
 
             debug( hv => q{ HV key "%s" = %s}, $key, $value );
-
-            #if (   !$swash_ToCf
-            #    and $fullname =~ /^utf8::SWASHNEW/
-            #    and $cstring eq '"utf8\034unicore/To/Cf.pl\0340"'
-            #    and $cur == 23 ) {
-            #    $swash_ToCf = $value; ????
-            #    verbose("Found PL_utf8_tofold ToCf swash $value");
-            #}
         }
 
         # save the iterator in hv_aux (and malloc it)
-        if ( !$is_stash and ( $hv->FLAGS & SVf_OOK ) ) {
-            # hv_auxinit is doing the malloc for us, could use Newxz if not public
-            init()->add( sprintf( "HvRITER_set(%s, %d);", $sym, $hv->RITER ) ),    # could use -1 ?
-        }
+        init()->add( sprintf( "HvRITER_set(%s, %d);", $sym, -1 ) );    # saved $hv->RITER
 
         init()->add("}");
         init()->split;
