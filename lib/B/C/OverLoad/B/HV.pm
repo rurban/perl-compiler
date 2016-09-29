@@ -185,7 +185,8 @@ sub save {
     $sym = savesym( $hv, "(HV*)&sv_list[$sv_list_index]" ) unless $is_stash;
     push @B::C::static_free, $sym if $hv->FLAGS & SVs_OBJECT;
 
-    if (@hash_content_to_save) {
+    #if (@hash_content_to_save) {
+    { # add hash content even if the hash is empty [ maybe only for %INC ??? ]
         init()->no_split;
         init()->add(
             "{",
@@ -248,7 +249,6 @@ EOS
 
         # save the iterator in hv_aux (and malloc it)
         if ( !$is_stash and ( $hv->FLAGS & SVf_OOK ) ) {
-
             # hv_auxinit is doing the malloc for us, could use Newxz if not public
             init()->add( sprintf( "HvRITER_set(%s, %d);", $sym, $hv->RITER ) ),    # could use -1 ?
         }
