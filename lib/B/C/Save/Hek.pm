@@ -71,10 +71,19 @@ sub save_shared_he {
     my ( $savesym, $cur, $len ) = savepv($key);    # initialize with empty string
     $cur *= -1 if $utf8;
 
-    sharedhe()->comment("(HE*) hent_next, (HEK*), hent_hek, (Size_t) hent_refcount, (U32) hek_hash, (I32) hek_len, (char*) hek_key, (char) hek_flags");
+    sharedhe()->comment("
+         he shared_he_he   { (HE*) hent_next, (HEK*), hent_hek, (Size_t) hent_refcount }, 
+         hek shared_he_hek { (U32) hek_hash, (I32) hek_len, char hek_key[1] = { (char*) hek_key, (char) hek_flags } } 
+    ");
 
-#    sharedhe()->add( sprintf( " .shared_he_he = { NULL, NULL, IMMORTAL_PL_strtab} , .shared_he_hek =  { 0, %d, %s, 0x%0x }", $cur, $savesym, $utf8 ? 1 : 0 ) );
-    sharedhe()->add( " .shared_he_he = { NULL,", " NULL, ", "IMMORTAL_PL_strtab} , ", sprintf(".shared_he_hek =  { 0, %d, %s}", $cur, $savesym ) );
+    sharedhe()->add( 
+        sprintf( "
+            .shared_he_he={ NULL, NULL, {.hent_refcount=IMMORTAL_PL_strtab} },
+            .shared_he_hek={ (U32) 0, (I32) %d, .hek_key[0] = '?' }
+            ",  $cur, $savesym
+            #$utf8 ? 1 : 0 
+            ) );
+
 
     return $saved_shared_hash{$key} = sprintf( "&sharedhek_list[%d]", sharedhe()->index - 1 );
 }
