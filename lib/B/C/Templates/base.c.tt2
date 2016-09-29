@@ -141,7 +141,6 @@ struct my_padname_with_str {
 typedef struct my_padname_with_str MyPADNAME;
 typedef struct shared_he SHARED_HE;
 
-
 /*
     Tricky hack for -fcog since 5.10 on !c99 compilers required. We need a char* as
     *first* sv_u element to be able to statically initialize it. A int does not allow it.

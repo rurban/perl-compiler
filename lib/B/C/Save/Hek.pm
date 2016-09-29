@@ -6,6 +6,7 @@ use B qw(cstring);
 use B::C::Config;
 use B::C::File qw( decl init sharedhe);
 use B::C::Helpers qw/strlen_flags/;
+use B::C::SaveCOW qw/savepv/;
 
 use Exporter ();
 our @ISA = qw(Exporter);
@@ -65,11 +66,15 @@ sub save_shared_he {
 
     return $saved_shared_hash{$key} if $saved_shared_hash{$key};
 
-    my ( $cstring, $cur, $utf8 ) = strlen_flags($key);
+    my $utf8;
+    ( undef, undef, $utf8 ) = strlen_flags($key);
+    my ( $savesym, $cur, $len ) = savepv($key);    # initialize with empty string
     $cur *= -1 if $utf8;
 
     sharedhe()->comment("(HE*) hent_next, (HEK*), hent_hek, (Size_t) hent_refcount, (U32) hek_hash, (I32) hek_len, (char*) hek_key, (char) hek_flags");
-    sharedhe()->add( sprintf( "NULL, NULL, NULL, IMMORTAL_PL_strtab, 0, %d, %s, 0x%0x", $cur, $cstring, $utf8 ? 1 : 0 ) );
+
+#    sharedhe()->add( sprintf( " .shared_he_he = { NULL, NULL, IMMORTAL_PL_strtab} , .shared_he_hek =  { 0, %d, %s, 0x%0x }", $cur, $savesym, $utf8 ? 1 : 0 ) );
+    sharedhe()->add( " .shared_he_he = { NULL,", " NULL, ", "IMMORTAL_PL_strtab} , ", sprintf(".shared_he_hek =  { 0, %d, %s}", $cur, $savesym ) );
 
     return $saved_shared_hash{$key} = sprintf( "&sharedhek_list[%d]", sharedhe()->index - 1 );
 }

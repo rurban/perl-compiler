@@ -29,7 +29,7 @@ sub savepv {
     return @{ $strtable{$cstring} } if defined $strtable{$cstring};
     my $pvsym = sprintf( "cowpv%d", inc_pv_index() );
 
-    my $max_len = get_max_string_len();
+    my $max_len = B::C::Save::get_max_string_len();
     if ( $max_len && $cur > $max_len ) {
         my $chars = join ', ', map { cchar $_ } split //, pack( "a*", $pv );
         const()->add( sprintf( "Static const char %s[] = { %s };", $pvsym, $chars ) );
