@@ -221,14 +221,13 @@ sub save {
             init()->no_split;
             init()->add(
                 "{",
+                "char *array;",
+                "HE *entry;",
+                "HE **oentry;",
+                
                 sprintf( "\tHV *hv = %s%s;", $sym =~ /^hv|\(HV/ ? '' : '(HV*)', $sym )
-            );
-            init()->add(
-                "\tchar *array;",
-                sprintf( "\tNewxz (array, PERL_HV_ARRAY_ALLOC_BYTES (%d), char);", $hv_max_plus_one ),
-                sprintf( "\tHvARRAY (%s) = (HE **) array;",                        $sym ),
-                "\tHE * entry;",
-                "\tHE **oentry;",
+                sprintf( "Newxz (array, PERL_HV_ARRAY_ALLOC_BYTES (%d), char);", $hv_max_plus_one ),
+                sprintf( "HvARRAY (%s) = (HE **) array;",                        $sym ),
             );
 
             while (@contents) {
@@ -239,12 +238,14 @@ sub save {
                 # Insert each key into the hash.
                 {
                     my $hek_sym = save_shared_he($key);
+                    my $hek_sym_simple = $hek_sym;
+                    $hek_sym_simple =~ s{^&}{};
                     init()->add(
                         "",
-                        "entry = new_HE",
-                        sprintf( "HeKEY_hek (entry) = %s", $hek_sym ),
+                        "entry = new_HE();",
+                        sprintf( "HeKEY_hek(entry) = &(%s.shared_he_hek);", $hek_sym_simple ),
                         sprintf( "HeVAL (entry) = %s;",    $value ),
-                        sprintf( "oentry = &(HvARRAY (%s))[HEK_HASH(%s) & (I32) %d];", $sym, $hek_sym, $hv_max_plus_one ),
+                        sprintf( "oentry = &(HvARRAY (%s))[HEK_HASH(&(%s.shared_he_hek)) & (I32) %d];", $sym, $hek_sym_simple, $hv_max_plus_one ),
                         "HeNEXT(entry) = *oentry;",
                         "*oentry = entry;"
                     );
