@@ -257,19 +257,19 @@ Static [% section.$sect.typename() %] [% section.$sect.name() %]_list[[% lines %
 [% END %]
 
 static void perl_init0(pTHX) { /* fixup_ppaddr */
-
-    PL_strtab->xhv_keys = [% PL_strtab_max %];
-    hsplit (PL_strtab, PL_strtab->xhv_max + 1, [% PL_strtab_max %]);
-    assert(PL_strtab->xhv_keys == [% PL_strtab_max %]);
+    
+    ((XPVHV*) SvANY(PL_strtab))->xhv_keys = [% PL_strtab_max %];
+    hsplit (PL_strtab, ((XPVHV*) SvANY(PL_strtab))->xhv_max + 1, [% PL_strtab_max %]);
+    assert(((XPVHV*) SvANY(PL_strtab))->xhv_keys == [% PL_strtab_max %]);
     {
         int i;
         HE * entry;
         HE **oentry;
         HEK * hek_struct;
 
-        for(int i = 0; i < [% section.sharedhe.index %]; i++) {
-            entry = sharedhe_list[i]->shared_he_he;
-            hek_struct = sharedhe_list[i]->shared_he_hek;
+        for (i=0; i < [% section.sharedhe.index %]; i++) {
+            entry = &(sharedhe_list[i].shared_he_he);
+            hek_struct = &(sharedhe_list[i].shared_he_hek);
 
             HeKEY_hek(entry) = (char*) sharedhe_list[i] + sizeof(struct he);
             PERL_HASH (hek_struct->hek_hash,
