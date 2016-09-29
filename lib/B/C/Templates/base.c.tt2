@@ -263,15 +263,15 @@ static void perl_init0(pTHX) { /* fixup_ppaddr */
     assert(((XPVHV*) SvANY(PL_strtab))->xhv_keys == [% PL_strtab_max %]);
     {
         int i;
-        HE * entry;
-        HE **oentry;
-        HEK * hek_struct;
+        HE   *entry;
+        HE  **oentry;
+        HEK  *hek_struct;
 
         for (i=0; i < [% section.sharedhe.index %]; i++) {
             entry = &(sharedhe_list[i].shared_he_he);
             hek_struct = &(sharedhe_list[i].shared_he_hek);
 
-            HeKEY_hek(entry) = (char*) sharedhe_list[i] + sizeof(struct he);
+            HeKEY_hek(entry) = hek_struct; /* (HEK*) ( (char*) sharedhe_list[i] + sizeof(struct he) ); */
             PERL_HASH (hek_struct->hek_hash,
                        hek_struct->hek_key,
                        hek_struct->hek_len);
