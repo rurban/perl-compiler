@@ -74,7 +74,7 @@ sub save_shared_he {
 
     sharedhe()->add( sprintf( "STATIC_SHARED_HE_ALLOC(%d, %d, %s, %d);", $index, $cur, $cstr, $utf8 ? 1 : 0 ) );
 
-    return $saved_shared_hash{$key} = sprintf( "&sharedhe_list[%d]", $index );
+    return $saved_shared_hash{$key} = sprintf( q{sharedhe_list[%d]}, $index );
 }
 
 1;

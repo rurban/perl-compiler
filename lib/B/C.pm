@@ -1541,10 +1541,6 @@ sub build_template_stash {
         $[ and die 'Since the variable is deprecated, B::C does not support setting $[ to anything other than 0';
     }
 
-    # PL_strtab's hash size
-    my $strtab_keys = sharedhe()->index() + 1;
-    $c_file_stash->{'PL_strtab_max'} = 2**( int( log($strtab_keys) / log(2) ) + 1 );            # Raise to next power of 2.
-
     return $c_file_stash;
 }
 

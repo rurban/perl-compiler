@@ -26,7 +26,7 @@ use B::C::Save::Hek qw/save_shared_he/;
 
 my ($swash_ToCf);
 
-sub swash_ToCf_value {
+sub swash_ToCf_value { # NO idea what it s ??
     return $swash_ToCf;
 }
 
@@ -39,7 +39,8 @@ sub save {
     my $name     = $hv->NAME;
     my $is_stash = $name;
     my $magic;
-    my $hv_max_plus_one = 8;    # Default.
+
+    my $hv_max_plus_one = $hv->MAX + 1;
 
     if ($name) {
 
@@ -72,7 +73,6 @@ sub save {
             # If the stash name is empty xhv_name_count is negative, and names[0] should
             # be already set. but we rather write it.
             init()->no_split;
-            $hv_max_plus_one = $hv->MAX + 1;
 
             # unshift @enames, $name if $name_count < 0; # stashpv has already set names[0]
             init()->add(
@@ -128,61 +128,10 @@ sub save {
         debug( hv => "Saving stash keys for HV \"$name\" from \"$fullname\"" );
     }
 
-    # Ordinary HV or Stash
-    # KEYS = 0, inc. dynamically below with hv_store
-
-    xpvhvsect()->comment("stash mgu max keys");
-    xpvhvsect()->add(
-        sprintf(
-            "Nullhv, {0}, %d, %d",
-            $hv->MAX, 0
-        )
-    );
-
-    my $flags = $hv->FLAGS & ~SVf_READONLY & ~SVf_PROTECT;
-
-    svsect()->add(
-        sprintf(
-            "&xpvhv_list[%d], %Lu, 0x%x, {0}",
-            xpvhvsect()->index, $hv->REFCNT, $flags
-        )
-    );
-
-    # XXX failed at 16 (tied magic) for %main::
-    if ( !$is_stash and ( $hv->FLAGS & SVf_OOK ) ) {
-        $sym = sprintf( "&sv_list[%d]", svsect()->index );
-        my $hv_max_plus_one = $hv->MAX + 1;
-
-        # riter required, new _aux struct at the end of the HvARRAY. allocate ARRAY also.
-        init()->add(
-            "{\tHE **a;",
-            "#ifdef PERL_USE_LARGE_HV_ALLOC",
-            sprintf( "\tNewxz(a, PERL_HV_ARRAY_ALLOC_BYTES(%d) + sizeof(struct xpvhv_aux), HE*);", $hv_max_plus_one ),
-            "#else",
-            sprintf( "\tNewxz(a, %d + sizeof(struct xpvhv_aux), HE*);", $hv_max_plus_one ),
-            "#endif",
-            "\tHvARRAY($sym) = a;",
-            sprintf( "\tHvRITER_set(%s, %d);", $sym, $hv->RITER ),
-            "}"
-        );
-    }
-
-    svsect()->debug( $fullname, $hv );
-    my $sv_list_index = svsect()->index;
-    debug(
-        hv => "saving HV %%%s &sv_list[%d] 0x%x MAX=%d KEYS=%d",
-        $fullname, $sv_list_index, $$hv, $hv->MAX, $hv->KEYS
-    );
-
-    # do not need ARRAY_utf8: 5.20 came up with the utf8 fix
+    # reduce the content
+    # remove values from contents we are not going to save
+    my @hash_content_to_save;
     my @contents = $hv->ARRAY;
-
-    # protect against recursive self-reference
-    # i.e. with use Moose at stash Class::MOP::Class::Immutable::Trait
-    # value => rv => cv => ... => rv => same hash
-    $sym = savesym( $hv, "(HV*)&sv_list[$sv_list_index]" ) unless $is_stash;
-    push @B::C::static_free, $sym if $hv->FLAGS & SVs_OBJECT;
-
     if (@contents) {
         local $B::C::const_strings = $B::C::const_strings;
         my ( $i, $length );
@@ -212,43 +161,77 @@ sub save {
                 debug( hv => "saving HV \$" . $fullname . '{' . $key . "}" );
                 $contents[$i] = $sv->save( $fullname . '{' . $key . '}' );    # Turn the hash value into a symbol
             }
+
+            push @hash_content_to_save, [ $key, $sv ] if $sv;
         }
+    }
 
-        my $hv_total_keys = 0;
 
-        # If we didn't just clear all the values.
-        if ($length) {                                                        # there may be skipped STASH symbols
+
+
+
+    # Ordinary HV or Stash
+    # KEYS = 0, inc. dynamically below with hv_store
+
+
+    my $hv_total_keys = scalar(@hash_content_to_save);
+    xpvhvsect()->comment("HV* xmg_stash, union _xmgu mgu, STRLEN xhv_keys, STRLEN xhv_max");
+    xpvhvsect()->add( sprintf( "Nullhv, {0}, %d, %d", $hv_total_keys, get_max_hash_from_keys($hv_total_keys)) );
+
+    my $flags = $hv->FLAGS & ~SVf_READONLY & ~SVf_PROTECT;
+
+    svsect()->add(
+        sprintf(
+            "&xpvhv_list[%d], %Lu, 0x%x, {0}",
+            xpvhvsect()->index, $hv->REFCNT, $flags
+        )
+    );
+    my $sv_list_index = svsect()->index;
+
+    # protect against recursive self-reference
+    # i.e. with use Moose at stash Class::MOP::Class::Immutable::Trait
+    # value => rv => cv => ... => rv => same hash
+    $sym = savesym( $hv, "(HV*)&sv_list[$sv_list_index]" ) unless $is_stash;
+    push @B::C::static_free, $sym if $hv->FLAGS & SVs_OBJECT;
+
+    if ( @hash_content_to_save ) {
             init()->no_split;
             init()->add(
                 "{",
                 "char *array;",
                 "HE *entry;",
                 "HE **oentry;",
-                sprintf( "HV *hv = %s%s;", $sym =~ /^hv|\(HV/ ? '' : '(HV*)', $sym ),
-                sprintf( "Newxz (array, PERL_HV_ARRAY_ALLOC_BYTES (%d), char);", $hv_max_plus_one ),
+                # malloc the hash array + the xpvhv_aux which is part of it
+                sprintf( "Newxz (array, PERL_HV_ARRAY_ALLOC_BYTES (%d) + sizeof(struct xpvhv_aux), char);", $hv_max_plus_one ),
+                # setting the hash array to the HV (in sv_list) in sv_any
                 sprintf( "HvARRAY (%s) = (HE **) array;",                        $sym ),
             );
 
-            while (@contents) {
-                my ( $key, $value ) = splice( @contents, 0, 2 );
-
-                next unless defined $value;    # Skip values which we set to undef and didn't save the symbol.
+            foreach my $elt (@hash_content_to_save) { # loop on the array # FIXME to improve: add randomization
+                my ( $key, $value ) = @$elt;
 
                 # Insert each key into the hash.
                 {
                     my $hek_sym        = save_shared_he($key);
-                    my $hek_sym_simple = $hek_sym;
-                    $hek_sym_simple =~ s{^&}{};
-                    init()->add(
-                        "",
-                        "entry = (HE*)safemalloc(sizeof(HE));",
-                        sprintf( "HeKEY_hek(entry) = &(%s->shared_he_hek);", $hek_sym_simple ),
-                        sprintf( "HeVAL (entry) = %s;",                      $value ),
-                        sprintf( "oentry = &(HvARRAY (%s))[HEK_HASH(&(%s->shared_he_hek)) & (I32) %d];", $sym, $hek_sym_simple, $hv_max_plus_one ),
-                        "HeNEXT(entry) = *oentry;",
-                        "*oentry = entry;"
+                    
+                    my $C_CODE = <<'EOS';
+
+                    entry            = (HE*) safemalloc(sizeof(HE));
+                    HeKEY_hek(entry) = &(~HEK_SYM~->shared_he_hek);
+                    HeVAL (entry)    = ~VALUE~;
+                    oentry           = &(HvARRAY (~SYM~))[HEK_HASH(&(~HEK_SYM~->shared_he_hek)) & (I32) ~HV_MAX_P1~];
+                    HeNEXT(entry)    = *oentry;
+                    *oentry          = entry;
+EOS
+
+                    # lazy template
+                    my %macro = (
+                        HEK_SYM => $hek_sym,
+                        VALUE => $value,
+                        SYM => $sym,
+                        HV_MAX_P1 => $hv_max_plus_one,
                     );
-                    $hv_total_keys++;
+                    $C_CODE =~ s{(~([^~]+)~)}{$macro{$2}}g;
                 }
 
                 # issue 272: if SvIsCOW(sv) && SvLEN(sv) == 0 => sharedhek (key == "")
@@ -260,14 +243,39 @@ sub save {
                 #    and $fullname =~ /^utf8::SWASHNEW/
                 #    and $cstring eq '"utf8\034unicore/To/Cf.pl\0340"'
                 #    and $cur == 23 ) {
-                #    $swash_ToCf = $value;
+                #    $swash_ToCf = $value; ????
                 #    verbose("Found PL_utf8_tofold ToCf swash $value");
                 #}
             }
+
+            # save the iterator in hv_aux (and malloc it)
+            if ( !$is_stash and ( $hv->FLAGS & SVf_OOK ) ) {
+                # hv_auxinit is doing the malloc for us, could use Newxz if not public
+                init()->add( 
+                    sprintf( "HvRITER_set(%s, %d);", $sym, $hv->RITER ) ), # could use -1 ? 
+                    sprintf( "SvOOK_on(%s);", $sym ),
+            }        
+
+=pod
+            init()->add(
+                "if (!SvOOK($sym)) {",    # hv_auxinit is not exported
+                "  HE **a;",
+                "#ifdef PERL_USE_LARGE_HV_ALLOC",
+                sprintf( "  Newxz(a, PERL_HV_ARRAY_ALLOC_BYTES(%d) + sizeof(struct xpvhv_aux), HE*);", $hv_max_plus_one ),
+                "#else",
+                sprintf( "  Newxz(a, %d + sizeof(struct xpvhv_aux), HE*);", $hv_max_plus_one ),
+                "#endif",
+                "  SvOOK_on($sym);",
+                "}",
+                "{",
+                "  struct xpvhv_aux *aux = HvAUX($sym);",
+                sprintf( "  Newx(aux->xhv_name_u.xhvnameu_names, %d, HEK*);", scalar $name_count ),
+                sprintf( "  aux->xhv_name_count = %d;",                       $name_count )
+=cut
+
+
             init()->add("}");
             init()->split;
-            init()->add( sprintf( "HvTOTALKEYS(%s) = %d;", $sym, $hv_total_keys ) );
-        }
     }
     else {    # empty contents still needs to set keys=0
               # test 36, 140
@@ -286,6 +294,14 @@ sub save {
         B::C::make_c3($name);
     }
     return $sym;
+}
+
+sub get_max_hash_from_keys {
+    my $keys = shift;
+
+    return 7 unless $keys; # default hash max value
+
+    return 2 ** ( int( log($keys) / log(2) ) + 1 ) - 1;
 }
 
 1;
