@@ -175,11 +175,12 @@ Static GV *gv_list[[% gv_index %]];
 
 /* back in output_all() */
 
-[% FOREACH sect IN section_list %]
-[% lines = section.$sect.index + 1 %]
-[% NEXT IF lines == 0 %]
+/* define all Static sections */
+[% FOREACH sect IN section_list -%]
+[% lines = section.$sect.index + 1 -%]
+[% NEXT IF lines == 0 -%]
 Static [% section.$sect.typename() %] [% section.$sect.name() %]_list[[% lines %]];
-[% END %]
+[% END -%]
 
 /* hack for when Perl accesses PVX of GVs */
 Static const char emptystring[] = "\0";

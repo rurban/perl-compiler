@@ -36,6 +36,11 @@ our @ISA = qw(Exporter);
 # singleton
 my $self;
 
+sub singleton {
+    $self or die "Singleton not initialized";
+    return $self;
+}
+
 # The objects in quotes do not have any special logic.
 sub code_section_names {
     return qw{const decl init0 free sym hek sharedhe}, struct_names(), op_sections();
@@ -58,12 +63,6 @@ BEGIN {
     our @EXPORT_OK = map { ( $_, "${_}sect" ) } code_section_names();
     push @EXPORT_OK, init_section_names();
 
-}
-
-sub re_initialize {
-    my $outfile = $self->{'c_file_name'};
-    $self = undef;
-    return new($outfile);
 }
 
 sub new {
