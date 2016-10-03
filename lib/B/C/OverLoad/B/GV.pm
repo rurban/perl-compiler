@@ -395,31 +395,8 @@ sub save {
 
         save_gv_cv( $gv, $savefields, $fullname, $package, $sym, $gp, $gvname, $name );
 
-        if ($gp) {
+        save_gv_misc( $gp, $fullname, $gv, $sym, $savefields );
 
-            if ( !$B::C::stash or $fullname !~ /::$/ ) {
-
-                my $file = save_hek( $gv->FILE );
-                init()->add( sprintf( "GvFILE_HEK(%s) = %s;", $sym, $file ) )
-                  if $file ne 'NULL' and !$B::C::optimize_cop;
-            }
-
-            # init()->add(sprintf("GvNAME_HEK($sym) = %s;", save_hek($gv->NAME))) if $gv->NAME;
-
-            my $gvform = $gv->FORM;
-            if ( $$gvform && $savefields & Save_FORM ) {
-                debug( gv => "GV::save GvFORM(*$fullname) ..." );
-                $gvform->save($fullname);
-                init()->add( sprintf( "GvFORM(%s) = (CV*)s\\_%x;", $sym, $$gvform ) );
-
-                # glob_assign_glob analog to CV
-                init()->add( sprintf( "SvREFCNT_inc(s\\_%x);", $$gvform ) );
-                debug( gv => "GV::save GvFORM(*$fullname) done" );
-            }
-
-            save_gv_io( $gv, $fullname, $sym ) if $savefields & Save_IO;
-
-        }
     }
 
     # Shouldn't need to do save_magic since gv_fetchpv handles that. Esp. < and IO not
@@ -751,4 +728,34 @@ sub save_gv_cv {
     }
 
 }
+
+sub save_gv_misc {
+    my ( $gp, $fullname, $gv, $sym, $savefields ) = @_;
+    if ($gp) {
+
+        if ( !$B::C::stash or $fullname !~ /::$/ ) {
+
+            my $file = save_hek( $gv->FILE );
+            init()->add( sprintf( "GvFILE_HEK(%s) = %s;", $sym, $file ) )
+              if $file ne 'NULL' and !$B::C::optimize_cop;
+        }
+
+        # init()->add(sprintf("GvNAME_HEK($sym) = %s;", save_hek($gv->NAME))) if $gv->NAME;
+
+        my $gvform = $gv->FORM;
+        if ( $$gvform && $savefields & Save_FORM ) {
+            debug( gv => "GV::save GvFORM(*$fullname) ..." );
+            $gvform->save($fullname);
+            init()->add( sprintf( "GvFORM(%s) = (CV*)s\\_%x;", $sym, $$gvform ) );
+
+            # glob_assign_glob analog to CV
+            init()->add( sprintf( "SvREFCNT_inc(s\\_%x);", $$gvform ) );
+            debug( gv => "GV::save GvFORM(*$fullname) done" );
+        }
+
+        save_gv_io( $gv, $fullname, $sym ) if $savefields & Save_IO;
+
+    }
+}
+
 1;
