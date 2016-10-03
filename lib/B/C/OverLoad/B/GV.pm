@@ -386,7 +386,7 @@ sub save {
     if ($savefields) {
 
         my $got;
-        $got = save_gv_sv( $gv, $savefields, $fullname, $sym, $package, $gvname );
+        $got = save_gv_sv( $gv, $fullname, $sym, $package, $gvname ) if $savefields & Save_SV;
         return $got if $got;
 
         save_gv_av( $gv, $savefields, $fullname, $sym );
@@ -417,53 +417,50 @@ sub gv_fetchpv_string {
     return "gv_fetchpvn_flags($cname, $cur, $flags, $type)";
 }
 
-sub save_gv_sv {
-    my ( $gv, $savefields, $fullname, $sym, $package, $gvname ) = @_;
+my $CORE_SVS = {    # special SV syms to assign to the right GvSV
 
-    # Don't save subfields of special GVs (*_, *1, *# and so on)
-    debug( gv => "GV::save saving subfields $savefields" );
+    "main::\\" => 'PL_ors_sv',
+    "main::/"  => 'PL_rs',
+    "main::@"  => 'PL_errors',
+};
+
+sub save_gv_sv {
+    my ( $gv, $fullname, $sym, $package, $gvname ) = @_;
+
     my $gvsv = $gv->SV;
-    if ( $$gvsv && $savefields & Save_SV ) {
-        debug( gv => "GV::save \$" . $sym . " $gvsv" );
-        my $core_svs = {    # special SV syms to assign to the right GvSV
-            "\\" => 'PL_ors_sv',
-            "/"  => 'PL_rs',
-            "@"  => 'PL_errors',
-        };
-        for my $s ( sort keys %$core_svs ) {
-            if ( $fullname eq 'main::' . $s ) {
-                savesym( $gvsv, $core_svs->{$s} );    # TODO: This could bypass BEGIN settings (->save is ignored)
-            }
-        }
-        if ( $gvname eq 'VERSION' and $B::C::xsub{$package} and $gvsv->FLAGS & SVf_ROK ) {
-            debug( gv => "Strip overload from $package\::VERSION, fails to xs boot (issue 91)" );
-            my $rv     = $gvsv->object_2svref();
-            my $origsv = $$rv;
-            no strict 'refs';
-            ${$fullname} = "$origsv";
-            svref_2object( \${$fullname} )->save($fullname);
-            init()->add( sprintf( "GvSVn(%s) = (SV*)s\\_%x;", $sym, $$gvsv ) );
-        }
-        else {
-            $gvsv->save($fullname);    #even NULL save it, because of gp_free nonsense
-                                       # we need sv magic for the core_svs (PL_rs -> gv) (#314)
-            if ( exists $core_svs->{$gvname} ) {
-                if ( $gvname eq "\\" ) {    # ORS special case #318 (initially NULL)
-                    return $sym;
-                }
-                else {
-                    $gvsv->save_magic($fullname) if ref($gvsv) eq 'B::PVMG';
-                    init()->add( sprintf( "SvREFCNT(s\\_%x) += 1;", $$gvsv ) );
-                }
-            }
-            init()->add( sprintf( "GvSVn(%s) = (SV*)s\\_%x;", $sym, $$gvsv ) );
-        }
-        if ( $fullname eq 'main::$' ) {     # $$ = PerlProc_getpid() issue #108
-            debug( gv => "  GV $sym \$\$ perlpid" );
-            init()->add("sv_setiv(GvSV($sym), (IV)PerlProc_getpid());");
-        }
-        debug( gv => "GV::save \$$fullname" );
+    return unless $$gvsv;
+
+    if ( my $pl_core_sv = $CORE_SVS->{$fullname} ) {
+        savesym( $gvsv, $pl_core_sv );
     }
+
+    if ( $gvname eq 'VERSION' and $B::C::xsub{$package} and $gvsv->FLAGS & SVf_ROK ) {
+        debug( gv => "Strip overload from $package\::VERSION, fails to xs boot (issue 91)" );
+        my $rv     = $gvsv->object_2svref();
+        my $origsv = $$rv;
+        no strict 'refs';
+        ${$fullname} = "$origsv";
+        svref_2object( \${$fullname} )->save($fullname);
+    }
+    else {
+        $gvsv->save($fullname);    #even NULL save it, because of gp_free nonsense
+                                   # we need sv magic for the core_svs (PL_rs -> gv) (#314)
+        if ( exists $CORE_SVS->{"main::$gvname"} ) {
+
+            # ORS special case #318 (initially NULL)
+            return $sym if $gvname eq "\\";
+
+            $gvsv->save_magic($fullname) if ref($gvsv) eq 'B::PVMG';
+            init()->add( sprintf( "SvREFCNT(s\\_%x) += 1;", $$gvsv ) );
+        }
+    }
+
+    init()->add( sprintf( "GvSVn(%s) = (SV*)s\\_%x;", $sym, $$gvsv ) );
+
+    if ( $fullname eq 'main::$' ) {    # $$ = PerlProc_getpid() issue #108
+        init()->add("sv_setiv(GvSV($sym), (IV)PerlProc_getpid());");
+    }
+
     return;
 }
 
