@@ -389,18 +389,7 @@ sub save {
         $got = save_gv_cv( $gv, $savefields, $fullname, $sym, $package, $gvname );
         return $got if $got;
 
-        my $gvav = $gv->AV;
-        if ( $$gvav && $savefields & Save_AV ) {
-            debug( gv => "GV::save \@$fullname" );
-            $gvav->save($fullname);
-            init()->add( sprintf( "GvAV(%s) = s\\_%x;", $sym, $$gvav ) );
-            if ( $fullname eq 'main::-' ) {
-                init()->add(
-                    sprintf( "AvFILLp(s\\_%x) = -1;", $$gvav ),
-                    sprintf( "AvMAX(s\\_%x) = -1;",   $$gvav )
-                );
-            }
-        }
+        save_gv_av( $gv, $savefields, $fullname, $sym );
         my $gvhv = $gv->HV;
         if ( $$gvhv && $savefields & Save_HV ) {
             if ( $fullname ne 'main::ENV' ) {
@@ -630,7 +619,7 @@ sub save {
                 debug( gv => "GV::save GvFORM(*$fullname) done" );
             }
 
-            save_io( $gv, $fullname, $sym ) if $savefields & Save_IO;
+            save_gv_io( $gv, $fullname, $sym ) if $savefields & Save_IO;
 
         }
     }
@@ -701,7 +690,7 @@ sub save_gv_cv {
     return;
 }
 
-sub save_io {
+sub save_gv_io {
     my ( $gv, $fullname, $sym ) = @_;
 
     my $gvio = $gv->IO;
@@ -731,4 +720,20 @@ sub save_io {
     return;
 }
 
+sub save_gv_av {
+    my ( $gv, $savefields, $fullname, $sym ) = @_;
+    my $gvav = $gv->AV;
+    if ( $$gvav && $savefields & Save_AV ) {
+        debug( gv => "GV::save \@$fullname" );
+        $gvav->save($fullname);
+        init()->add( sprintf( "GvAV(%s) = s\\_%x;", $sym, $$gvav ) );
+        if ( $fullname eq 'main::-' ) {
+            init()->add(
+                sprintf( "AvFILLp(s\\_%x) = -1;", $$gvav ),
+                sprintf( "AvMAX(s\\_%x) = -1;",   $$gvav )
+            );
+        }
+    }
+
+}
 1;
