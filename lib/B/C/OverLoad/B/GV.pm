@@ -97,13 +97,6 @@ sub savecv {
 
 sub save {
     my ( $gv, $filter ) = @_;
-
-    my $sym;    # gvsect->save();
-    return save_legacy( $gv, $filter, $sym );
-}
-
-sub save_legacy {
-    my ( $gv, $filter ) = @_;
     my $sym = objsym($gv);
     if ( defined($sym) ) {
         debug( gv => "GV 0x%x already saved as $sym", ref $gv ? $$gv : 0 );
