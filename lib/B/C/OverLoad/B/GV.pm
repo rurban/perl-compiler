@@ -735,15 +735,13 @@ sub save_gv_misc {
         init()->add( sprintf( "GvFILE_HEK(%s) = %s;", $sym, $file ) ) if $file ne 'NULL' and !$B::C::optimize_cop;
     }
 
-    # init()->add(sprintf("GvNAME_HEK($sym) = %s;", save_hek($gv->NAME))) if $gv->NAME;
+    return unless $savefields & Save_FORM;
+    return unless my $gvform = $gv->FORM;
 
-    my $gvform = $gv->FORM;
-    if ( $$gvform && $savefields & Save_FORM ) {
-        $gvform->save($fullname);
-        init()->add( sprintf( "GvFORM(%s) = (CV*)s\\_%x;", $sym, $$gvform ) );
-        init()->add( sprintf( "SvREFCNT_inc(s\\_%x);", $$gvform ) );
-    }
-
+    $gvform->save($fullname);
+    init()->add( sprintf( "GvFORM(%s) = (CV*)s\\_%x;", $sym, $$gvform ) );
+    init()->add( sprintf( "SvREFCNT_inc(s\\_%x);", $$gvform ) );
+    return;
 }
 
 1;
