@@ -97,6 +97,13 @@ sub savecv {
 
 sub save {
     my ( $gv, $filter ) = @_;
+
+    my $sym;    # gvsect->save();
+    return save_legacy( $gv, $filter, $sym );
+}
+
+sub save_legacy {
+    my ( $gv, $filter ) = @_;
     my $sym = objsym($gv);
     if ( defined($sym) ) {
         debug( gv => "GV 0x%x already saved as $sym", ref $gv ? $$gv : 0 );
@@ -610,17 +617,8 @@ sub save {
         }
         if ($gp) {
 
-            # TODO implement heksect to place all heks at the beginning
-            #heksect()->add($gv->FILE);
-            #init()->add(sprintf("GvFILE_HEK($sym) = hek_list[%d];", heksect()->index));
+            if ( !$B::C::stash or $fullname !~ /::$/ ) {
 
-            # XXX Maybe better leave it NULL or asis, than fighting broken
-            if ( $B::C::stash and $fullname =~ /::$/ ) {
-
-                # ignore stash hek asserts when adding the stash
-                # he->shared_he_he.hent_hek == hek assertions (#46 with IO::Poll::)
-            }
-            else {
                 my $file = save_hek( $gv->FILE );
                 init()->add( sprintf( "GvFILE_HEK(%s) = %s;", $sym, $file ) )
                   if $file ne 'NULL' and !$B::C::optimize_cop;
@@ -638,32 +636,9 @@ sub save {
                 init()->add( sprintf( "SvREFCNT_inc(s\\_%x);", $$gvform ) );
                 debug( gv => "GV::save GvFORM(*$fullname) done" );
             }
-            my $gvio = $gv->IO;
-            if ( $$gvio && $savefields & Save_IO ) {
-                debug( gv => "GV::save GvIO(*$fullname)..." );
-                if ( $fullname =~ m/::DATA$/
-                    && ( $fullname eq 'main::DATA' or $B::C::save_data_fh ) )    # -O2 or 5.8
-                {
-                    no strict 'refs';
-                    my $fh = *{$fullname}{IO};
-                    use strict 'refs';
-                    debug( gv => "GV::save_data $sym, $fullname ..." );
-                    $gvio->save( $fullname, 'is_DATA' );
-                    init()->add( sprintf( "GvIOp(%s) = s\\_%x;", $sym, $$gvio ) );
-                    $gvio->save_data( $sym, $fullname, <$fh> ) if $fh->opened;
-                }
-                elsif ( $fullname =~ m/::DATA$/ && !$B::C::save_data_fh ) {
-                    $gvio->save( $fullname, 'is_DATA' );
-                    init()->add( sprintf( "GvIOp(%s) = s\\_%x;", $sym, $$gvio ) );
-                    WARN("Warning: __DATA__ handle $fullname not stored. Need -O2 or -fsave-data.");
-                }
-                else {
-                    $gvio->save($fullname);
-                    init()->add( sprintf( "GvIOp(%s) = s\\_%x;", $sym, $$gvio ) );
-                }
-                debug( gv => "GV::save GvIO(*$fullname) done" );
-            }
-            init()->add("");
+
+            save_io( $gv, $fullname, $sym ) if $savefields & Save_IO;
+
         }
     }
 
@@ -730,6 +705,35 @@ sub save_gv_cv {
         }
         debug( gv => "GV::save \$$fullname" );
     }
+    return;
+}
+
+sub save_io {
+    my ( $gv, $fullname, $sym ) = @_;
+
+    my $gvio = $gv->IO;
+
+    debug( gv => "GV::save GvIO(*$fullname)..." );
+    if ( $fullname =~ m/::DATA$/
+        && ( $fullname eq 'main::DATA' or $B::C::save_data_fh ) )    # -O2 or 5.8
+    {
+        no strict 'refs';
+        my $fh = *{$fullname}{IO};
+        use strict 'refs';
+        debug( gv => "GV::save_data $sym, $fullname ..." );
+        $gvio->save( $fullname, 'is_DATA' );
+        $gvio->save_data( $sym, $fullname, <$fh> ) if $fh->opened;
+    }
+    elsif ( $fullname =~ m/::DATA$/ && !$B::C::save_data_fh ) {
+        $gvio->save( $fullname, 'is_DATA' );
+    }
+    else {
+        $gvio->save($fullname);
+
+    }
+
+    init()->add( sprintf( "GvIOp(%s) = s\\_%x;", $sym, $$gvio ) );
+    debug( gv => "GV::save GvIO(*$fullname) done" );
 
     return;
 }
