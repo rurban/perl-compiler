@@ -242,7 +242,6 @@ sub save {
     #  return $sym;
     #}
     my $svflags    = $gv->FLAGS;
-    my $savefields = 0;
 
     my $gp;
     my $gvadd = $notqual ? "$notqual|GV_ADD" : "GV_ADD";
@@ -287,7 +286,6 @@ sub save {
 
             # XXX !PERL510 and OPf_COP_TEMP we need to fake PL_curcop for gp_file hackery
             init()->add( "$sym = " . gv_fetchpv_string( $name, $gvadd, 'SVt_PV' ) . ";" );
-            $savefields = Save_HV | Save_AV | Save_SV | Save_CV | Save_FORM | Save_IO;
             $gptable{ 0 + $gp } = "GvGP($sym)";
         }
         else {
@@ -334,6 +332,62 @@ sub save {
 
     debug( gv => "check which savefields for \"$gvname\"" );
 
+    my $savefields = get_savefields( $gv, $gvname, $fullname, $filter );
+
+
+    # issue 79: Only save stashes for stashes.
+    # But not other values to avoid recursion into unneeded territory.
+    # We walk via savecv, not via stashes.
+    if ( ref($gv) eq 'B::STASHGV' and $gvname !~ /::$/ ) {
+        return $sym;
+    }
+
+    # attributes::bootstrap is created in perl_parse.
+    # Saving it would overwrite it, because perl_init() is
+    # called after perl_parse(). But we need to xsload it.
+    if ( $fullname eq 'attributes::bootstrap' ) {
+        unless ( defined( &{ $package . '::bootstrap' } ) ) {
+            verbose("Forcing bootstrap of $package");
+            eval { $package->bootstrap };
+        }
+        mark_package( 'attributes', 1 );
+        $B::C::xsub{attributes} = 'Dynamic-' . $INC{'attributes.pm'};    # XSLoader
+        $B::C::use_xsloader = 1;
+    }
+
+    my $gvsv;
+    if ($savefields) {
+
+        my $got;
+        $got = save_gv_sv( $gv, $savefields, $fullname, $sym, $package, $gvname );
+        return $got if $got;
+
+        save_gv_av( $gv, $savefields, $fullname, $sym );
+
+        save_gv_hv( $gv, $savefields, $fullname, $sym, $gvname );
+
+        save_gv_cv( $gv, $savefields, $fullname, $package, $sym, $gp, $gvname, $name );
+
+        save_gv_misc( $gp, $fullname, $gv, $sym, $savefields );
+
+    }
+
+    # Shouldn't need to do save_magic since gv_fetchpv handles that. Esp. < and IO not
+    # $gv->save_magic($fullname) if $PERL510;
+    debug( gv => "GV::save *$fullname done" );
+    return $sym;
+}
+
+sub get_savefields {
+    my ( $gv, $gvname, $fullname, $filter ) = @_;
+
+    my $savefields = 0;
+
+    # my $gp = $gv->GP; # REMOVED
+    # if ( $gp and !$gv->is_empty and $gvname !~ /::$/ ) {
+    #     $savefields = Save_HV | Save_AV | Save_SV | Save_CV | Save_FORM | Save_IO;    
+    # }
+
     # some non-alphabetic globs require some parts to be saved
     # ( ex. %!, but not $! )
     if ( $gvname !~ /^([^A-Za-z]|STDIN|STDOUT|STDERR|ARGV|SIG|ENV)$/ ) {
@@ -357,52 +411,11 @@ sub save {
         and $filter > 0
         and $filter < 64 );
 
-    # issue 79: Only save stashes for stashes.
-    # But not other values to avoid recursion into unneeded territory.
-    # We walk via savecv, not via stashes.
-    if ( ref($gv) eq 'B::STASHGV' and $gvname !~ /::$/ ) {
-        return $sym;
-    }
-
-    # attributes::bootstrap is created in perl_parse.
-    # Saving it would overwrite it, because perl_init() is
-    # called after perl_parse(). But we need to xsload it.
-    if ( $fullname eq 'attributes::bootstrap' ) {
-        unless ( defined( &{ $package . '::bootstrap' } ) ) {
-            verbose("Forcing bootstrap of $package");
-            eval { $package->bootstrap };
-        }
-        mark_package( 'attributes', 1 );
-        $savefields &= ~Save_CV;
-        $B::C::xsub{attributes} = 'Dynamic-' . $INC{'attributes.pm'};    # XSLoader
-        $B::C::use_xsloader = 1;
-    }
-
     # avoid overly dynamic POSIX redefinition warnings: GH #335, #345
-    if ( $fullname =~ m/^POSIX::M/ ) {
-        $savefields &= ~Save_CV;
-    }
-    my $gvsv;
-    if ($savefields) {
+    $savefields &= ~Save_CV if $fullname =~ m/^POSIX::M/ or $fullname eq 'attributes::bootstrap';
 
-        my $got;
-        $got = save_gv_sv( $gv, $savefields, $fullname, $sym, $package, $gvname );
-        return $got if $got;
 
-        save_gv_av( $gv, $savefields, $fullname, $sym );
-
-        save_gv_hv( $gv, $savefields, $fullname, $sym, $gvname );
-
-        save_gv_cv( $gv, $savefields, $fullname, $package, $sym, $gp, $gvname, $name );
-
-        save_gv_misc( $gp, $fullname, $gv, $sym, $savefields );
-
-    }
-
-    # Shouldn't need to do save_magic since gv_fetchpv handles that. Esp. < and IO not
-    # $gv->save_magic($fullname) if $PERL510;
-    debug( gv => "GV::save *$fullname done" );
-    return $sym;
+    return $savefields;
 }
 
 sub gv_fetchpv_string {
