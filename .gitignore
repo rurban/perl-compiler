@@ -79,3 +79,4 @@ nytprof/
 /t/v5.*/t/urkkk.pm
 .prove
 .gdb_history
+/test*
