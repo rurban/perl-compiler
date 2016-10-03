@@ -397,7 +397,7 @@ sub save {
 
         save_gv_misc( $gp, $fullname, $gv, $sym, $savefields );
 
-        save_gv_io( $gv, $fullname, $sym, $savefields );
+        save_gv_io( $gv, $fullname, $sym ) if $savefields & Save_IO;
 
     }
 
@@ -468,35 +468,29 @@ sub save_gv_sv {
 }
 
 sub save_gv_io {
-    my ( $gv, $fullname, $sym, $savefields ) = @_;
+    my ( $gv, $fullname, $sym ) = @_;
 
     my $gvio = $gv->IO;
-    if ( $$gvio && $savefields & Save_IO ) {
-        debug( gv => "GV::save GvIO(*$fullname)..." );
-        if ( $fullname =~ m/::DATA$/
-            && ( $fullname eq 'main::DATA' or $B::C::save_data_fh ) )    # -O2 or 5.8
-        {
-            no strict 'refs';
-            my $fh = *{$fullname}{IO};
-            use strict 'refs';
-            debug( gv => "GV::save_data $sym, $fullname ..." );
-            $gvio->save( $fullname, 'is_DATA' );
-            init()->add( sprintf( "GvIOp(%s) = s\\_%x;", $sym, $$gvio ) );
-            $gvio->save_data( $sym, $fullname, <$fh> ) if $fh->opened;
-        }
-        elsif ( $fullname =~ m/::DATA$/ && !$B::C::save_data_fh ) {
-            $gvio->save( $fullname, 'is_DATA' );
-            init()->add( sprintf( "GvIOp(%s) = s\\_%x;", $sym, $$gvio ) );
-            WARN("Warning: __DATA__ handle $fullname not stored. Need -O2 or -fsave-data.");
-        }
-        else {
-            $gvio->save($fullname);
-            init()->add( sprintf( "GvIOp(%s) = s\\_%x;", $sym, $$gvio ) );
-        }
-        debug( gv => "GV::save GvIO(*$fullname) done" );
-    }
-    init()->add("");
+    return unless $$gvio;
 
+    my $is_data;
+    if ( $fullname eq 'main::DATA' or ( $fullname =~ m/::DATA$/ and $B::C::save_data_fh ) )    # -O2 or 5.8
+    {
+        no strict 'refs';
+        my $fh = *{$fullname}{IO};
+        use strict 'refs';
+        $is_data = 'is_DATA';
+        $gvio->save_data( $sym, $fullname, <$fh> ) if $fh->opened;
+    }
+    elsif ( $fullname =~ m/::DATA$/ && !$B::C::save_data_fh ) {
+        $is_data = 'is_DATA';
+        WARN("Warning: __DATA__ handle $fullname not stored. Need -O2 or -fsave-data.");
+    }
+
+    $gvio->save( $fullname, $is_data );
+    init()->add( sprintf( "GvIOp(%s) = s\\_%x;", $sym, $$gvio ) );
+
+    return;
 }
 
 sub save_gv_av {
