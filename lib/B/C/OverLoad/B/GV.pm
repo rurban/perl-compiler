@@ -7,7 +7,7 @@ use B qw/cstring svref_2object SVt_PVGV SVf_ROK SVf_UTF8/;
 use B::C::Config;
 use B::C::Save::Hek qw/save_hek/;
 use B::C::Packages qw/is_package_used/;
-use B::C::File qw/init init2 gvsect xpvgvsect/;
+use B::C::File qw/init init2 gvsect xpvgvsect gpsect/;
 use B::C::Helpers qw/mark_package get_cv_string strlen_flags/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 use B::C::Optimizer::ForceHeavy qw/force_heavy/;
@@ -122,9 +122,11 @@ sub get_fullname {
 }
 
 # FIXME todo and move later to B/GP.pm ?
-sub B::GP::save {
-    my ( $gp, $gv, $filter ) = @_;
-    return 'NULL';
+sub savegp_from_gv {
+    my ( $gv, $filter ) = @_;
+
+    my $gp = $gv->GP; # B limitation
+    debug( gv => "XXX saving a gp %s - $gp", ref $gp );
 
     my $gvname = $gv->NAME;
     my $fullname = $gv->get_fullname;
@@ -140,9 +142,9 @@ sub B::GP::save {
     # walksymtable creates an extra reference to the GV (#197)
     my $gp_refcount = $gv->GvREFCNT - 1; # +1 for immortal ?
     
-    my $gp_line = $gv->GvLINE;
+    my $gp_line = $gv->LINE; # we want to use GvLINE from B.xs
     # present only in perl 5.22.0 and higher. this flag seems unused ( saving 0 for now should be similar )
-    my $gp_flags = $gv->GvGPFLAGS; # PERL_BITFIELD32 gp_flags:1; ~ unsigned gp_flags:1 
+    my $gp_flags = $gv->GPFLAGS; # PERL_BITFIELD32 gp_flags:1; ~ unsigned gp_flags:1 
     die("gp_flags seems used now ???") if $gp_flags;
     
     my $gp_file_hek = q{NULL};
@@ -154,7 +156,7 @@ sub B::GP::save {
     my $savefields = get_savefields( $gv, $gvname, $fullname, $filter );
 
     $gp_av = save_gv_av( $gv, $fullname ) if $savefields & Save_AV;
-    # ....
+    # .... TODO save stuff there
     # ....    
 
     gpsect()->comment('SV, gp_io, CV, cvgen, gp_refcount, HV, AV, CV, GV, line, flags, HEK* file');
@@ -163,7 +165,7 @@ sub B::GP::save {
         $gp_sv, $gp_io, $gp_cv, $gp_cvgen, $gp_refcount, $gp_hv, $gp_av, $gp_form, $gp_egv,
         $gp_line, $gp_flags, $gp_file_hek));
 
-    return savesym( $gp, "&gp_list[%d]", gpsect()->index );
+    return savesym( $gp, sprintf( "&gp_list[%d]", gpsect()->index ) );
 }
 
 sub save {
@@ -184,9 +186,10 @@ sub save {
     my $gpsym = 'NULL';
     my $is_coresym = $gv->is_coresym();
 
+    debug( gv => "XXX %d and %d", $gv->isGV_with_GP ? 1 : 0, !$is_coresym ? 1 : 0 );
+
     if ( $gv->isGV_with_GP and !$is_coresym ) {
-        my $gp = $gv->GP;                                  # B limitation
-        $gpsym = B::GP::save($gp, $gv, $filter); # might be $gp->save( )
+        $gpsym = savegp_from_gv( $gv, $filter); # might be $gp->save( )
     }
 
 
@@ -215,7 +218,7 @@ sub save {
         my $gv_flags  = $gv->FLAGS;
 
         gvsect()->comment( "XPVGV*  sv_any,  U32     sv_refcnt; U32     sv_flags; union   { gp* } sv_u # gp*" );
-        gvsect()->add( sprintf( "&%s, %u, 0x%x, %s", $xpvgv, $gv_refcnt, $gv_flags, $gpsym ) );        
+        gvsect()->add( sprintf( "&%s, %u, 0x%x, {.svu_gp=(GP*)%s}", $xpvgv, $gv_refcnt, $gv_flags, $gpsym ) );        
     }
     
     my $sym = savesym( $gv, sprintf( '&gv_list[%d]', gvsect()->index ) );
