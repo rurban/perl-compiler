@@ -189,28 +189,28 @@ sub save {
         my $stash = savestashpv( $op->stashpv );
         init()->add( sprintf( "CopSTASH_set(&cop_list[%d], %s);", $ix, $stash ) );
 
-        if ($B::C::const_strings) {
-            my $constpv = constpv($file);
+            if ($B::C::const_strings) {
+                my $constpv = constpv($file);
 
-            # define CopFILE_set(c,pv)     CopFILEGV_set((c), gv_fetchfile(pv))
-            # cache gv_fetchfile
-            if ( !$copgvtable{$constpv} ) {
-
-                #gvsect()->comment( "XPVGV*  sv_any,  U32     sv_refcnt; U32     sv_flags; union   { gp* } sv_u # gp*" );
-                gvsect()->add( sprintf( "%s, %u, 0x%x, %s", 'NULL', 0, 0, 'NULL' ) );
-                $copgvtable{$constpv} = gvsect()->index();
-                init()->add( sprintf( "gv_list[%d] = *(GV*) gv_fetchfile(%s);", $copgvtable{$constpv}, $constpv ) );
+                # define CopFILE_set(c,pv)     CopFILEGV_set((c), gv_fetchfile(pv))
+                # cache gv_fetchfile
+                if ( !$copgvtable{$constpv} ) {
+                    
+                    #gvsect()->comment( "XPVGV*  sv_any,  U32     sv_refcnt; U32     sv_flags; union   { gp* } sv_u # gp*" );
+                    gvsect()->add( sprintf( "%s, %u, 0x%x, {%s}", 'NULL', 0, 0, 'NULL' ) );        
+                    $copgvtable{$constpv} = gvsect()->index();
+                    init()->add( sprintf( "gv_list[%d] = *(GV*) gv_fetchfile(%s);", $copgvtable{$constpv}, $constpv ) );
+                }
+                init()->add(
+                    sprintf(
+                        "CopFILEGV_set(&cop_list[%d], &gv_list[%d]); /* %s */",
+                        $ix, $copgvtable{$constpv}, cstring($file)
+                    )
+                );
             }
-            init()->add(
-                sprintf(
-                    "CopFILEGV_set(&cop_list[%d], &gv_list[%d]); /* %s */",
-                    $ix, $copgvtable{$constpv}, cstring($file)
-                )
-            );
-        }
-        else {
-            init()->add( sprintf( "CopFILE_set(&cop_list[%d], %s);", $ix, cstring($file) ) );
-        }
+            else {
+                init()->add( sprintf( "CopFILE_set(&cop_list[%d], %s);", $ix, cstring($file) ) );
+            }
 
     }
 

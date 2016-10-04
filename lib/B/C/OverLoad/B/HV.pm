@@ -190,9 +190,6 @@ sub save {
         init()->add(
             "{",
             "char *array;",
-            "HE *entry;",
-            "HE **oentry;",
-
             # malloc the hash array + the xpvhv_aux which is part of it
             sprintf( "Newxz (array, PERL_HV_ARRAY_ALLOC_BYTES (%d) + sizeof(struct xpvhv_aux), char);", $max + 1 ),
 
@@ -209,6 +206,11 @@ sub save {
 
         # uncomment for saving hashes in a consistent order while debugging
         #@hash_elements = @hash_content_to_save;
+
+        init()->add( 
+            "HE *entry;",
+            "HE **oentry;"
+        ) if @hash_elements;
 
         foreach my $elt (@hash_elements) {
             my ( $key, $value ) = @$elt;

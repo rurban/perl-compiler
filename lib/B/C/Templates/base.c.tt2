@@ -483,7 +483,6 @@ static int fast_perl_destruct( PerlInterpreter *my_perl ) {
     if (PL_exit_flags & PERL_EXIT_DESTRUCT_END) {
         dJMPENV;
         int x = 0;
-
         JMPENV_PUSH(x);
         if (PL_endav && !PL_minus_c) {
 #if PERL_VERSION > 13
@@ -549,7 +548,7 @@ static int fast_perl_destruct( PerlInterpreter *my_perl ) {
         PerlIO_printf(Perl_debug_log, "\n");
         for (sva = PL_sv_arenaroot; sva; sva = (SV*)SvANY(sva)) {
             PerlIO_printf(Perl_debug_log, "sv_arena: 0x%p - 0x%p (%lu)\n",
-              sva, sva+SvREFCNT(sva), 0+SvREFCNT(sva));
+              sva, sva+SvREFCNT(sva), (long unsigned int) 0+SvREFCNT(sva));
         }
     }
 #endif
