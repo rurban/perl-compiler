@@ -7,7 +7,7 @@ use B qw/cstring svref_2object SVt_PVGV SVf_ROK SVf_UTF8/;
 use B::C::Config;
 use B::C::Save::Hek qw/save_hek/;
 use B::C::Packages qw/is_package_used/;
-use B::C::File qw/init init2/;
+use B::C::File qw/init init2 gvsect /;
 use B::C::Helpers qw/mark_package get_cv_string strlen_flags/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 use B::C::Optimizer::ForceHeavy qw/force_heavy/;
@@ -107,6 +107,28 @@ my $CORE_SYMS = {
     "main::\022"   => 'PL_replgv',     # ^R
 };
 
+sub get_package {
+    my $gv = shift;
+
+    if ( ref( $gv->STASH ) eq 'B::SPECIAL' ) {
+        return '__ANON__';
+    }
+
+    return $gv->STASH->NAME;
+}
+
+sub is_coresym {
+    my $gv = shift;
+
+    return $CORE_SYMS->{ get_fullname($gv) } ? 1 : 0;
+}
+
+sub get_fullname {
+    my $gv = shift;
+
+    return $gv->get_package() . "::" . $gv->NAME();
+}
+
 sub save {
     my ( $gv, $filter ) = @_;
     my $sym = objsym($gv);
@@ -122,37 +144,22 @@ sub save {
 
     my $gvname = $gv->NAME();
 
-    debug(
-        gv => "  GV %s $sym type=%d, flags=0x%x",
-        $gvname,
-
-        # B::SV::SvTYPE not with 5.6
-        B::SV::SvTYPE($gv), $gv->FLAGS
-    );
-
     if ( $gv->FLAGS & 0x40000000 ) {    # SVpbm_VALID
         debug( gv => "  GV $sym isa FBM" );
         return B::BM::save($gv);
     }
 
-    my $package;
-    if ( ref( $gv->STASH ) eq 'B::SPECIAL' ) {
-        $package = '__ANON__';
-        debug( gv => "GV STASH = SPECIAL $gvname" );
-    }
-    else {
-        $package = $gv->STASH->NAME;
-    }
+    my $package = $gv->get_package();
     return q/(SV*)&PL_sv_undef/ if B::C::skip_pkg($package);
 
     # If we come across a stash hash, we therefore have code using it so we need to mark it was used so it won't be deleted.
     if ( $gvname =~ m/::$/ ) {
-        my $package = $gvname;
-        $package =~ s/::$//;
-        mark_package_used($package);
+        my $pkg = $gvname;
+        $pkg =~ s/::$//;
+        mark_package_used($pkg);
     }
 
-    my $fullname = $package . "::" . $gvname;
+    my $fullname = $gv->get_fullname();
 
     my $is_empty = $gv->is_empty;
     if ( !defined $gvname and $is_empty ) {    # 5.8 curpad name
