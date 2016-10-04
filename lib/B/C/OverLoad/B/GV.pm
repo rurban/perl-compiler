@@ -7,7 +7,7 @@ use B qw/cstring svref_2object SVt_PVGV SVf_ROK SVf_UTF8/;
 use B::C::Config;
 use B::C::Save::Hek qw/save_hek/;
 use B::C::Packages qw/is_package_used/;
-use B::C::File qw/init init2 gvsect /;
+use B::C::File qw/init init2 gvsect xpvgvsect/;
 use B::C::Helpers qw/mark_package get_cv_string strlen_flags/;
 use B::C::Helpers::Symtable qw/objsym savesym/;
 use B::C::Optimizer::ForceHeavy qw/force_heavy/;
@@ -120,7 +120,7 @@ sub get_package {
 sub is_coresym {
     my $gv = shift;
 
-    return $CORE_SYMS->{ get_fullname($gv) } ? 1 : 0;
+    return $CORE_SYMS->{ $gv->get_fullname() } ? 1 : 0;
 }
 
 sub get_fullname {
@@ -129,28 +129,120 @@ sub get_fullname {
     return $gv->get_package() . "::" . $gv->NAME();
 }
 
+# FIXME todo and move later to B/GP.pm ?
+sub B::GP::save {
+    my ( $gp, $gv, $filter ) = @_;
+    return 'NULL';
+
+    my $gvname   = $gv->NAME;
+    my $fullname = $gv->get_fullname;
+
+    my $gpsym = objsym($gp);
+    return $gpsym if defined $gpsym;
+
+    # gp fields initializations
+    # gp_cvgen: not set, no B api ( could be done in init section )
+    my ( $gp_sv, $gp_io, $gp_cv, $gp_cvgen, $gp_hv, $gp_av, $gp_form, $gp_egv ) = ( 'NULL', 'NULL', 'NULL', 0, 'NULL', 'NULL', 'NULL', 'NULL' );
+
+    # walksymtable creates an extra reference to the GV (#197)
+    my $gp_refcount = $gv->GvREFCNT - 1;    # +1 for immortal ?
+
+    my $gp_line = $gv->GvLINE;
+
+    # present only in perl 5.22.0 and higher. this flag seems unused ( saving 0 for now should be similar )
+    my $gp_flags = $gv->GvGPFLAGS;          # PERL_BITFIELD32 gp_flags:1; ~ unsigned gp_flags:1
+    die("gp_flags seems used now ???") if $gp_flags;
+
+    my $gp_file_hek = q{NULL};
+    if ( ( !$B::C::stash or $fullname !~ /::$/ ) and $gv->FILEGV ne 'NULL' ) {    # and !$B::C::optimize_cop
+        $gp_file_hek = $gv->FILEGV;                                               # Reini was using FILE instead of FILEGV ?
+    }
+
+    # getting the value when possible
+    my $savefields = get_savefields( $gv, $gvname, $fullname, $filter );
+
+    $gp_av = save_gv_av( $gv, $fullname ) if $savefields & Save_AV;
+
+    # ....
+    # ....
+
+    gpsect()->comment('SV, gp_io, CV, cvgen, gp_refcount, HV, AV, CV, GV, line, flags, HEK* file');
+
+    gpsect()->add(
+        sprintf(
+            "%s, %s, %s, %d, %u, %s, %s, %s, %s, %u, %d, %s",
+            $gp_sv,   $gp_io,    $gp_cv, $gp_cvgen, $gp_refcount, $gp_hv, $gp_av, $gp_form, $gp_egv,
+            $gp_line, $gp_flags, $gp_file_hek
+        )
+    );
+
+    return savesym( $gp, "&gp_list[%d]", gpsect()->index );
+}
+
 sub save {
     my ( $gv, $filter ) = @_;
-    my $sym = objsym($gv);
-    if ( defined($sym) ) {
-        debug( gv => "GV 0x%x already saved as $sym", ref $gv ? $$gv : 0 );
-        return $sym;
+
+    {    # cache lookup
+        my $gvsym = objsym($gv);
+        return $gvsym if defined $gvsym;
+        debug( gv => "Saving GV 0x%x as $gvsym", ref $gv ? $$gv : 0 );
     }
-    else {
-        my $ix = inc_index();
-        $sym = savesym( $gv, "gv_list[$ix]" );
-        debug( gv => "Saving GV 0x%x as $sym", ref $gv ? $$gv : 0 );
+
+    # GV $sym isa FBM
+    return B::BM::save($gv) if $gv->FLAGS & 0x40000000;    # SVpbm_VALID
+
+    my $package = get_package($gv);
+    return q/(SV*)&PL_sv_undef/ if B::C::skip_pkg($package);
+
+    my $gpsym      = 'NULL';
+    my $is_coresym = $gv->is_coresym();
+
+    if ( $gv->isGV_with_GP and !$is_coresym ) {
+        my $gp = $gv->GP;                                  # B limitation
+        $gpsym = B::GP::save( $gp, $gv, $filter );         # might be $gp->save( )
     }
+
+    # # head
+    # HV*         xmg_stash;      /* class package */                     \
+    # union _xmgu xmg_u;                                                  \
+    # STRLEN      xpv_cur;        /* length of svu_pv as a C string */    \
+    # union {                                                             \
+    #     STRLEN  xpvlenu_len;    /* allocated size */                    \
+    #     char *  xpvlenu_pv;     /* regexp string */                     \
+    # } xpv_len_u
+    # union _xivu xiv_u;
+    # union _xnvu xnv_u;
+    #my $stash = $gv->STASH;
+    xpvgvsect()->comment("stash, magic, cur, len, xiv_u={.xivu_namehek=}, xnv_u={.xgv_stash=}");
+    xpvgvsect()->add(
+        sprintf(
+            "Nullhv, {0}, 0, {.xpvlenu_len=0}, {.xivu_namehek=%s}, {.xgv_stash=%s}",
+            'NULL', 'Nullhv'
+        )
+    );
+    my $xpvgv = sprintf( 'xpvgv_list[%d]', xpvgvsect()->index );
+
+    {
+        my $gv_refcnt = $gv->REFCNT;    # TODO probably need more love for both refcnt (+1 ? extra flag immortal)
+        my $gv_flags  = $gv->FLAGS;
+
+        gvsect()->comment("XPVGV*  sv_any,  U32     sv_refcnt; U32     sv_flags; union   { gp* } sv_u # gp*");
+        gvsect()->add( sprintf( "&%s, %u, 0x%x, %s", $xpvgv, $gv_refcnt, $gv_flags, $gpsym ) );
+    }
+
+    my $sym = savesym( $gv, sprintf( '&gv_list[%d]', gvsect()->index ) );
+    my $gvsym = $sym;
+    $gvsym =~ s{^&}{};
+
+    #my ( $gv, $filter, $sym ) = @_;
+
+    # my $ix = inc_index();
+    # $sym = savesym( $gv, "gv_list[$ix]" );
+    # debug( gv => "Saving GV 0x%x as $sym", ref $gv ? $$gv : 0 );
 
     my $gvname = $gv->NAME();
 
-    if ( $gv->FLAGS & 0x40000000 ) {    # SVpbm_VALID
-        debug( gv => "  GV $sym isa FBM" );
-        return B::BM::save($gv);
-    }
-
     my $package = $gv->get_package();
-    return q/(SV*)&PL_sv_undef/ if B::C::skip_pkg($package);
 
     # If we come across a stash hash, we therefore have code using it so we need to mark it was used so it won't be deleted.
     if ( $gvname =~ m/::$/ ) {
@@ -192,8 +284,6 @@ sub save {
         }
     }
 
-    my $is_coresym;
-
     # those are already initialized in init_predump_symbols()
     # and init_main_stash()
     if ( $CORE_SYMS->{$fullname} ) {
@@ -202,20 +292,17 @@ sub save {
     }
 
     if ( $fullname =~ /^main::std(in|out|err)$/ ) {    # same as uppercase above
-        init()->add(qq[$sym = gv_fetchpv($cname, $notqual, SVt_PVGV);]);
-        init()->add( sprintf( "SvREFCNT(%s) = %u;", $sym, $gv->REFCNT ) );
+        init()->add(qq[$gvsym = *(GV*) gv_fetchpv($cname, $notqual, SVt_PVGV);]);
         return $sym;
     }
     elsif ( $fullname eq 'main::0' ) {                 # dollar_0 already handled before, so don't overwrite it
-        init()->add(qq[$sym = gv_fetchpv($cname, $notqual, SVt_PV);]);
-        init()->add( sprintf( "SvREFCNT(%s) = %u;", $sym, $gv->REFCNT ) );
+        init()->add(qq[$gvsym = *(GV*) gv_fetchpv($cname, $notqual, SVt_PV);]);
         return $sym;
     }
 
     # gv_fetchpv loads Errno resp. Tie::Hash::NamedCapture, but needs *INC #90
     #elsif ( $fullname eq 'main::!' or $fullname eq 'main::+' or $fullname eq 'main::-') {
     #  init1()->add(qq[$sym = gv_fetchpv($name, TRUE, SVt_PVGV);]); # defer until INC is setup
-    #  init1()->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
     #  return $sym;
     #}
     my $svflags = $gv->FLAGS;
@@ -231,59 +318,33 @@ sub save {
             );
 
             # Shared glob *foo = *bar
-            init()->add( "$sym = " . gv_fetchpv_string( $name, "$gvadd|GV_ADDMULTI", 'SVt_PVGV' ) . ";" );
+            init()->add( "$gvsym = *(GV*) " . gv_fetchpv_string( $name, "$gvadd|GV_ADDMULTI", 'SVt_PVGV' ) . ";" );
             init()->add("GvGP_set($sym, GvGP($egvsym));");
             $is_empty = 1;
         }
         elsif ( $gp and exists $gptable{ 0 + $gp } ) {
-            debug(
-                gv => "Shared GvGP for *%s 0x%x%s %s GP:0x%x",
-                $fullname, $svflags, debug('flags') ? "(" . $gv->flagspv . ")" : "",
-                $gv->FILE, $gp
-            );
-            init()->add( "$sym = " . gv_fetchpv_string( $name, $notqual, 'SVt_PVGV' ) . ";" );
+            init()->add( "$gvsym = *(GV*)" . gv_fetchpv_string( $name, $notqual, 'SVt_PVGV' ) . ";" );
             init()->add( sprintf( "GvGP_set(%s, %s);", $sym, $gptable{ 0 + $gp } ) );
             $is_empty = 1;
         }
         elsif ( $gp and !$is_empty and $gvname =~ /::$/ ) {
-            debug(
-                gv => "Shared GvGP for stash %%%s 0x%x%s %s GP:0x%x",
-                $fullname, $svflags, debug('flags') ? "(" . $gv->flagspv . ")" : "",
-                $gv->FILE, $gp
-            );
-            init()->add( "$sym = " . gv_fetchpv_string( $name, 'GV_ADD', 'SVt_PVHV' ) . ";" );
+            init()->add( "$gvsym = *(GV*)" . gv_fetchpv_string( $name, 'GV_ADD', 'SVt_PVHV' ) . ";" );
             $gptable{ 0 + $gp } = "GvGP($sym)" if 0 + $gp;
         }
         elsif ( $gp and !$is_empty ) {
-            debug(
-                gv => "New GV for *%s 0x%x%s %s GP:0x%x",
-                $fullname, $svflags, debug('flags') ? "(" . $gv->flagspv . ")" : "",
-                $gv->FILE, $gp
-            );
 
             # XXX !PERL510 and OPf_COP_TEMP we need to fake PL_curcop for gp_file hackery
-            init()->add( "$sym = " . gv_fetchpv_string( $name, $gvadd, 'SVt_PV' ) . ";" );
+            init()->add( "$gvsym = *(GV*)" . gv_fetchpv_string( $name, $gvadd, 'SVt_PV' ) . ";" );
             $gptable{ 0 + $gp } = "GvGP($sym)";
         }
         else {
-            init()->add( "$sym = " . gv_fetchpv_string( $name, $gvadd, 'SVt_PVGV' ) . ";" );
+            init()->add( "$gvsym = *(GV*)" . gv_fetchpv_string( $name, $gvadd, 'SVt_PVGV' ) . ";" );
         }
     }
     elsif ( !$is_coresym ) {
-        init()->add( "$sym = " . gv_fetchpv_string( $name, $gvadd, 'SVt_PV' ) . ";" );
+        init()->add( "$gvsym = *(GV*)" . gv_fetchpv_string( $name, $gvadd, 'SVt_PV' ) . ";" );
     }
-    my $gvflags = $gv->GvFLAGS;
 
-    init()->add(
-        sprintf(
-            "SvFLAGS(%s) = 0x%x;%s", $sym, $svflags,
-            debug('flags') ? " /* " . $gv->flagspv . " */" : ""
-        ),
-        sprintf(
-            "GvFLAGS(%s) = 0x%x; %s", $sym, $gvflags,
-            debug('flags') ? "/* " . $gv->flagspv(SVt_PVGV) . " */" : ""
-        )
-    );
     init()->add(
         sprintf(
             'GvLINE(%s) = %d;',
@@ -296,16 +357,7 @@ sub save {
         )
     ) unless $is_empty;
 
-    # walksymtable creates an extra reference to the GV (#197)
-    if ( $gv->REFCNT > 1 ) {
-        init()->add( sprintf( "SvREFCNT(%s) = %u;", $sym, $gv->REFCNT ) );
-    }
     return $sym if $is_empty;
-
-    my $gvrefcnt = $gv->GvREFCNT;
-    if ( $gvrefcnt > 1 ) {
-        init()->add( sprintf( "GvREFCNT(%s) += %u;", $sym, $gvrefcnt - 1 ) );
-    }
 
     debug( gv => "check which savefields for \"$gvname\"" );
 
@@ -507,20 +559,19 @@ sub save_gv_io {
 }
 
 sub save_gv_av {
-    my ( $gv, $fullname, $sym ) = @_;
+    my ( $gv, $fullname ) = @_;
     return unless my $gvav = $gv->AV;
 
-    debug( gv => "GV::save \@$fullname" );
-    $gvav->save($fullname);
-    init()->add( sprintf( "GvAV(%s) = s\\_%x;", $sym, $$gvav ) );
-    if ( $fullname eq 'main::-' ) {
+    my $sym = $gvav->save($fullname);
+
+    if ( $fullname eq 'main::-' ) {    # TODO move this logic to AV::save ???
         init()->add(
             sprintf( "AvFILLp(s\\_%x) = -1;", $$gvav ),
             sprintf( "AvMAX(s\\_%x) = -1;",   $$gvav )
         );
     }
 
-    return;
+    return $sym;
 }
 
 sub save_gv_hv {
@@ -739,13 +790,6 @@ sub save_gv_misc {
     my ( $gp, $fullname, $gv, $sym, $savefields ) = @_;
 
     return unless $gp;
-
-    if ( !$B::C::stash or $fullname !~ /::$/ ) {
-
-        my $file = save_hek( $gv->FILE );
-        init()->add( sprintf( "GvFILE_HEK(%s) = %s;", $sym, $file ) ) if $file ne 'NULL' and !$B::C::optimize_cop;
-    }
-
     return unless $savefields & Save_FORM;
     return unless my $gvform = $gv->FORM;
 

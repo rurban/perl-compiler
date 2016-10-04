@@ -71,6 +71,7 @@ void** dlindependent_comalloc(size_t, size_t*, void**);
 [% END %] 
 
 typedef struct shared_he SHARED_HE;
+typedef GV* GVP;
 
 #define IMMORTAL_PL_strtab 0x7ffffff
 
@@ -170,7 +171,7 @@ typedef struct p5rx RE;
 Static IV PL_sv_objcount = 0; /* deprecated with 5.21.1 but still needed and used */
 SV* sv;
 [% IF gv_index %]
-Static GV *gv_list[[% gv_index %]];
+//Static GV *gv_list[[% gv_index %]];
 [% END %]
 
 /* back in output_all() */

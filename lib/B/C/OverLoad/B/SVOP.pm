@@ -39,7 +39,7 @@ sub save {
     else {
         my $sv = $op->sv;
         $svsym = $sv->save( "svop " . $op->name );
-        if ( $svsym =~ /^(gv_|PL_.*gv)/ ) {
+        if ( $svsym =~ /^(&?gv_|PL_.*gv)/ ) {
             $svsym = '(SV*)' . $svsym;
         }
         elsif ( $svsym =~ /^\([SAHC]V\*\)\&sv_list/ ) {

@@ -73,7 +73,7 @@ sub save {
     svsect()->debug( $fullname, $sv );
 
     push @B::C::static_free, "&" . $s if $flags & SVs_OBJECT;
-    return savesym( $sv, "&" . $s );
+    return savesym( $sv, "&$s" );
 }
 
 sub save_pv_or_rv {
