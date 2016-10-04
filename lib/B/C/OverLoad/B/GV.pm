@@ -5,7 +5,7 @@ use strict;
 use B qw/cstring svref_2object SVt_PVGV SVf_ROK SVf_UTF8/;
 
 use B::C::Config;
-use B::C::Save::Hek qw/save_hek/;
+use B::C::Save::Hek qw/save_hek save_shared_he/;
 use B::C::Packages qw/is_package_used/;
 use B::C::File qw/init init2 gvsect xpvgvsect gpsect/;
 use B::C::Helpers qw/mark_package get_cv_string strlen_flags/;
@@ -121,13 +121,15 @@ sub get_fullname {
     return $gv->get_package() . "::" . $gv->NAME();
 }
 
+my %saved_gps;
+
 # FIXME todo and move later to B/GP.pm ?
 sub savegp_from_gv {
     my ( $gv, $filter ) = @_;
 
-    my $gp = $gv->GP; # B limitation
-    debug( gv => "XXX saving a gp %s - $gp", ref $gp );
-
+    my $gp = $gv->GP; # B limitation GP is just a number not a reference so we cannot use objsym / savesym
+    return $saved_gps{$gp} if defined $saved_gps{$gp};
+    
     my $gvname = $gv->NAME;
     my $fullname = $gv->get_fullname;
 
@@ -149,7 +151,7 @@ sub savegp_from_gv {
     
     my $gp_file_hek = q{NULL};
     if ( ( !$B::C::stash or $fullname !~ /::$/ ) and $gv->FILEGV ne 'NULL' ) { # and !$B::C::optimize_cop 
-        $gp_file_hek = $gv->FILEGV; # Reini was using FILE instead of FILEGV ?   
+        $gp_file_hek = save_shared_he( $gv->FILEGV ); # Reini was using FILE instead of FILEGV ?   
     }
 
     # getting the value when possible
@@ -161,11 +163,12 @@ sub savegp_from_gv {
 
     gpsect()->comment('SV, gp_io, CV, cvgen, gp_refcount, HV, AV, CV, GV, line, flags, HEK* file');
 
-    gpsect()->add(sprintf("%s, %s, %s, %d, %u, %s, %s, %s, %s, %u, %d, %s", 
+    gpsect()->add(sprintf("%s, %s, %s, %d, %u, %s, %s, %s, %s, %u, %d, &%s", 
         $gp_sv, $gp_io, $gp_cv, $gp_cvgen, $gp_refcount, $gp_hv, $gp_av, $gp_form, $gp_egv,
         $gp_line, $gp_flags, $gp_file_hek));
 
-    return savesym( $gp, sprintf( "&gp_list[%d]", gpsect()->index ) );
+    $saved_gps{$gp} = sprintf( "&gp_list[%d]", gpsect()->index );
+    return $saved_gps{$gp};
 }
 
 sub save {
@@ -186,24 +189,10 @@ sub save {
     my $gpsym = 'NULL';
     my $is_coresym = $gv->is_coresym();
 
-    debug( gv => "XXX %d and %d", $gv->isGV_with_GP ? 1 : 0, !$is_coresym ? 1 : 0 );
-
     if ( $gv->isGV_with_GP and !$is_coresym ) {
         $gpsym = savegp_from_gv( $gv, $filter); # might be $gp->save( )
     }
 
-
-    # # head
-    # HV*         xmg_stash;      /* class package */                     \
-    # union _xmgu xmg_u;                                                  \
-    # STRLEN      xpv_cur;        /* length of svu_pv as a C string */    \
-    # union {                                                             \
-    #     STRLEN  xpvlenu_len;    /* allocated size */                    \
-    #     char *  xpvlenu_pv;     /* regexp string */                     \
-    # } xpv_len_u
-    # union _xivu xiv_u;
-    # union _xnvu xnv_u;
-    #my $stash = $gv->STASH;
     xpvgvsect()->comment("stash, magic, cur, len, xiv_u={.xivu_namehek=}, xnv_u={.xgv_stash=}");
     xpvgvsect()->add( 
         sprintf( "Nullhv, {0}, 0, {.xpvlenu_len=0}, {.xivu_namehek=%s}, {.xgv_stash=%s}", 
@@ -436,8 +425,6 @@ sub get_savefields {
     if ( $filter and $filter =~ qr{^[0-9]$} ) {
         $savefields &= ~$filter;
     }
-
-    debug( gv => "XXXX $fullname -> $savefields" );
 
     return $savefields;
 }
