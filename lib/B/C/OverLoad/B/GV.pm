@@ -127,10 +127,10 @@ my %saved_gps;
 sub savegp_from_gv {
     my ( $gv, $filter ) = @_;
 
-    my $gp = $gv->GP; # B limitation GP is just a number not a reference so we cannot use objsym / savesym
+    my $gp = $gv->GP;    # B limitation GP is just a number not a reference so we cannot use objsym / savesym
     return $saved_gps{$gp} if defined $saved_gps{$gp};
-    
-    my $gvname = $gv->NAME;
+
+    my $gvname   = $gv->NAME;
     my $fullname = $gv->get_fullname;
 
     my $gpsym = objsym($gp);
@@ -138,34 +138,38 @@ sub savegp_from_gv {
 
     # gp fields initializations
     # gp_cvgen: not set, no B api ( could be done in init section )
-    my ($gp_sv, $gp_io, $gp_cv, $gp_cvgen, $gp_hv, $gp_av, $gp_form, $gp_egv) =
-        ('NULL', 'NULL', 'NULL', 0, 'NULL', 'NULL', 'NULL', 'NULL');   
-    
+    my ( $gp_sv, $gp_io, $gp_cv, $gp_cvgen, $gp_hv, $gp_av, $gp_form, $gp_egv ) = ( 'NULL', 'NULL', 'NULL', 0, 'NULL', 'NULL', 'NULL', 'NULL' );
+
     # walksymtable creates an extra reference to the GV (#197)
-    my $gp_refcount = $gv->GvREFCNT - 1; # +1 for immortal ?
-    
-    my $gp_line = $gv->LINE; # we want to use GvLINE from B.xs
-    # present only in perl 5.22.0 and higher. this flag seems unused ( saving 0 for now should be similar )
-    my $gp_flags = $gv->GPFLAGS; # PERL_BITFIELD32 gp_flags:1; ~ unsigned gp_flags:1 
+    my $gp_refcount = $gv->GvREFCNT - 1;    # +1 for immortal ?
+
+    my $gp_line  = $gv->LINE;               # we want to use GvLINE from B.xs
+                                            # present only in perl 5.22.0 and higher. this flag seems unused ( saving 0 for now should be similar )
+    my $gp_flags = $gv->GPFLAGS;            # PERL_BITFIELD32 gp_flags:1; ~ unsigned gp_flags:1
     die("gp_flags seems used now ???") if $gp_flags;
-    
+
     my $gp_file_hek = q{NULL};
-    if ( ( !$B::C::stash or $fullname !~ /::$/ ) and $gv->FILEGV ne 'NULL' ) { # and !$B::C::optimize_cop 
-        $gp_file_hek = save_shared_he( $gv->FILEGV ); # Reini was using FILE instead of FILEGV ?   
+    if ( ( !$B::C::stash or $fullname !~ /::$/ ) and $gv->FILEGV ne 'NULL' ) {    # and !$B::C::optimize_cop
+        $gp_file_hek = save_shared_he( $gv->FILEGV );                             # Reini was using FILE instead of FILEGV ?
     }
 
     # getting the value when possible
     my $savefields = get_savefields( $gv, $gvname, $fullname, $filter );
 
     $gp_av = save_gv_av( $gv, $fullname ) if $savefields & Save_AV;
+
     # .... TODO save stuff there
-    # ....    
+    # ....
 
     gpsect()->comment('SV, gp_io, CV, cvgen, gp_refcount, HV, AV, CV, GV, line, flags, HEK* file');
 
-    gpsect()->add(sprintf("%s, %s, %s, %d, %u, %s, %s, %s, %s, %u, %d, &%s", 
-        $gp_sv, $gp_io, $gp_cv, $gp_cvgen, $gp_refcount, $gp_hv, $gp_av, $gp_form, $gp_egv,
-        $gp_line, $gp_flags, $gp_file_hek));
+    gpsect()->add(
+        sprintf(
+            "%s, %s, %s, %d, %u, %s, %s, %s, %s, %u, %d, (HEK*) (&%s + sizeof(HE)) ",
+            $gp_sv,   $gp_io,    $gp_cv, $gp_cvgen, $gp_refcount, $gp_hv, $gp_av, $gp_form, $gp_egv,
+            $gp_line, $gp_flags, $gp_file_hek
+        )
+    );
 
     $saved_gps{$gp} = sprintf( "&gp_list[%d]", gpsect()->index );
     return $saved_gps{$gp};
@@ -174,7 +178,7 @@ sub savegp_from_gv {
 sub save {
     my ( $gv, $filter ) = @_;
 
-    { # cache lookup
+    {    # cache lookup
         my $gvsym = objsym($gv);
         return $gvsym if defined $gvsym;
         debug( gv => "Saving GV 0x%x as $gvsym", ref $gv ? $$gv : 0 );
@@ -186,33 +190,33 @@ sub save {
     my $package = get_package($gv);
     return q/(SV*)&PL_sv_undef/ if B::C::skip_pkg($package);
 
-    my $gpsym = 'NULL';
+    my $gpsym      = 'NULL';
     my $is_coresym = $gv->is_coresym();
 
     if ( $gv->isGV_with_GP and !$is_coresym ) {
-        $gpsym = savegp_from_gv( $gv, $filter); # might be $gp->save( )
+        $gpsym = savegp_from_gv( $gv, $filter );           # might be $gp->save( )
     }
 
     xpvgvsect()->comment("stash, magic, cur, len, xiv_u={.xivu_namehek=}, xnv_u={.xgv_stash=}");
-    xpvgvsect()->add( 
-        sprintf( "Nullhv, {0}, 0, {.xpvlenu_len=0}, {.xivu_namehek=%s}, {.xgv_stash=%s}", 
+    xpvgvsect()->add(
+        sprintf(
+            "Nullhv, {0}, 0, {.xpvlenu_len=0}, {.xivu_namehek=%s}, {.xgv_stash=%s}",
             'NULL', 'Nullhv'
         )
     );
     my $xpvgv = sprintf( 'xpvgv_list[%d]', xpvgvsect()->index );
 
-
     {
-        my $gv_refcnt = $gv->REFCNT; # TODO probably need more love for both refcnt (+1 ? extra flag immortal)
+        my $gv_refcnt = $gv->REFCNT;    # TODO probably need more love for both refcnt (+1 ? extra flag immortal)
         my $gv_flags  = $gv->FLAGS;
 
-        gvsect()->comment( "XPVGV*  sv_any,  U32     sv_refcnt; U32     sv_flags; union   { gp* } sv_u # gp*" );
-        gvsect()->add( sprintf( "&%s, %u, 0x%x, {.svu_gp=(GP*)%s}", $xpvgv, $gv_refcnt, $gv_flags, $gpsym ) );        
+        gvsect()->comment("XPVGV*  sv_any,  U32     sv_refcnt; U32     sv_flags; union   { gp* } sv_u # gp*");
+        gvsect()->add( sprintf( "&%s, %u, 0x%x, {.svu_gp=(GP*)%s}", $xpvgv, $gv_refcnt, $gv_flags, $gpsym ) );
     }
-    
+
     my $sym = savesym( $gv, sprintf( '&gv_list[%d]', gvsect()->index ) );
     my $gvsym = $sym;
-    $gvsym =~ s{^&}{};    
+    $gvsym =~ s{^&}{};
 
     #my ( $gv, $filter, $sym ) = @_;
 
@@ -278,7 +282,7 @@ sub save {
     elsif ( $fullname eq 'main::0' ) {                 # dollar_0 already handled before, so don't overwrite it
         init()->add(qq[$gvsym = *(GV*) gv_fetchpv($cname, $notqual, SVt_PV);]);
         return $sym;
-    } 
+    }
 
     # gv_fetchpv loads Errno resp. Tie::Hash::NamedCapture, but needs *INC #90
     #elsif ( $fullname eq 'main::!' or $fullname eq 'main::+' or $fullname eq 'main::-') {
@@ -312,6 +316,7 @@ sub save {
             $gptable{ 0 + $gp } = "GvGP($sym)" if 0 + $gp;
         }
         elsif ( $gp and !$is_empty ) {
+
             # XXX !PERL510 and OPf_COP_TEMP we need to fake PL_curcop for gp_file hackery
             init()->add( "$gvsym = *(GV*)" . gv_fetchpv_string( $name, $gvadd, 'SVt_PV' ) . ";" );
             $gptable{ 0 + $gp } = "GvGP($sym)";
@@ -367,8 +372,6 @@ sub save {
         my $got;
         $got = save_gv_sv( $gv, $fullname, $sym, $package, $gvname ) if $savefields & Save_SV;
         return $got if $got;
-
-        save_gv_av( $gv, $fullname, $sym ) if $savefields & Save_AV;
 
         save_gv_hv( $gv, $fullname, $sym, $gvname ) if $savefields & Save_HV;
 
@@ -500,7 +503,6 @@ sub save_gv_sv {
         }
     }
 
-
     init()->add( sprintf( "GvSVn(%s) = (SV*)s\\_%x;", $sym, $$gvsv ) );
 
     if ( $fullname eq 'main::$' ) {    # $$ = PerlProc_getpid() issue #108
@@ -538,16 +540,20 @@ sub save_gv_io {
 
 sub save_gv_av {
     my ( $gv, $fullname ) = @_;
-    return unless my $gvav = $gv->AV;
+
+    my $gvav = $gv->AV;
+    return 'NULL' unless $gvav;
 
     my $sym = $gvav->save($fullname);
-    
-    if ( $fullname eq 'main::-' ) { # TODO move this logic to AV::save ???
+
+    if ( $fullname eq 'main::-' ) {    # TODO move this logic to AV::save ???
         init()->add(
             sprintf( "AvFILLp(s\\_%x) = -1;", $$gvav ),
             sprintf( "AvMAX(s\\_%x) = -1;",   $$gvav )
         );
     }
+
+    return 'NULL' if $sym eq 'Nullsv';    # why not
 
     return $sym;
 }
