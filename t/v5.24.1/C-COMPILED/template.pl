@@ -126,7 +126,7 @@ foreach my $optimization (@optimizations) {
 }
 unlink $bin_file, $c_file unless $ENV{BC_DEVELOPING};
 
-if ( $ENV{BC_DEVELOPING} ) {
+{
     note "List of generated files for ", $file_to_test;
 
     # add the list of files generated
