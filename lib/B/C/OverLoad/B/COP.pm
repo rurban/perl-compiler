@@ -4,7 +4,7 @@ use strict;
 
 use B qw/cstring/;
 use B::C::Config;
-use B::C::File qw/init copsect decl/;
+use B::C::File qw/init copsect decl gvsect/;
 use B::C::Save qw/constpv savestashpv/;
 use B::C::Decimal qw/get_integer_value/;
 use B::C::Helpers::Symtable qw/savesym objsym/;
@@ -188,30 +188,30 @@ sub save {
     if ( !$B::C::optimize_cop ) {
         my $stash = savestashpv( $op->stashpv );
         init()->add( sprintf( "CopSTASH_set(&cop_list[%d], %s);", $ix, $stash ) );
-        if ( !USE_ITHREADS() ) {
-            if ($B::C::const_strings) {
-                my $constpv = constpv($file);
 
-                # define CopFILE_set(c,pv)     CopFILEGV_set((c), gv_fetchfile(pv))
-                # cache gv_fetchfile
-                if ( !$copgvtable{$constpv} ) {
-                    $copgvtable{$constpv} = B::GV::inc_index();
-                    init()->add( sprintf( "gv_list[%d] = *(GV*) gv_fetchfile(%s);", $copgvtable{$constpv}, $constpv ) );
-                }
-                init()->add(
-                    sprintf(
-                        "CopFILEGV_set(&cop_list[%d], &gv_list[%d]); /* %s */",
-                        $ix, $copgvtable{$constpv}, cstring($file)
-                    )
-                );
+        if ($B::C::const_strings) {
+            my $constpv = constpv($file);
+
+            # define CopFILE_set(c,pv)     CopFILEGV_set((c), gv_fetchfile(pv))
+            # cache gv_fetchfile
+            if ( !$copgvtable{$constpv} ) {
+
+                #gvsect()->comment( "XPVGV*  sv_any,  U32     sv_refcnt; U32     sv_flags; union   { gp* } sv_u # gp*" );
+                gvsect()->add( sprintf( "%s, %u, 0x%x, %s", 'NULL', 0, 0, 'NULL' ) );
+                $copgvtable{$constpv} = gvsect()->index();
+                init()->add( sprintf( "gv_list[%d] = *(GV*) gv_fetchfile(%s);", $copgvtable{$constpv}, $constpv ) );
             }
-            else {
-                init()->add( sprintf( "CopFILE_set(&cop_list[%d], %s);", $ix, cstring($file) ) );
-            }
+            init()->add(
+                sprintf(
+                    "CopFILEGV_set(&cop_list[%d], &gv_list[%d]); /* %s */",
+                    $ix, $copgvtable{$constpv}, cstring($file)
+                )
+            );
         }
-        else {    # cv_undef e.g. in bproto.t and many more core tests with threads
+        else {
             init()->add( sprintf( "CopFILE_set(&cop_list[%d], %s);", $ix, cstring($file) ) );
         }
+
     }
 
     # our root: store all packages from this file
