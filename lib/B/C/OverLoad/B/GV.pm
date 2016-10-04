@@ -324,9 +324,15 @@ sub save {
         else {
             init()->add( "$gvsym = *(GV*)" . gv_fetchpv_string( $name, $gvadd, 'SVt_PVGV' ) . ";" );
         }
+
+        # we are overwriting everything from what was saved... restore it for now
+        init()->add( sprintf( "SvREFCNT(%s) = %u;", $sym, $gv->REFCNT ) );
     }
     elsif ( !$is_coresym ) {
         init()->add( "$gvsym = *(GV*)" . gv_fetchpv_string( $name, $gvadd, 'SVt_PV' ) . ";" );
+
+        # we are overwriting everything from what was saved... restore it for now
+        init()->add( sprintf( "SvREFCNT(%s) = %u;", $sym, $gv->REFCNT ) );
     }
 
     init()->add(
