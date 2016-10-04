@@ -141,30 +141,6 @@ sub save {
     }
 
     my $fullname = $package . "::" . $gvname;
-    my $fancyname;
-    if ( $filter and $filter =~ m/ :pad/ ) {
-        $fancyname = cstring($filter);
-        $filter    = 0;
-    }
-    else {
-        $fancyname = cstring($fullname);
-    }
-
-    # checked for defined'ness in Carp. So the GV must exist, the CV not
-    if ( $fullname =~ /^threads::(tid|AUTOLOAD)$/ and USE_ITHREADS() ) {
-        $filter = Save_CV;
-    }
-
-    # no need to assign any SV/AV/HV to them (172)
-    if ( $fullname =~ /^DynaLoader::dl_(require_symbols|resolve_using|librefs)/ ) {
-        $filter = Save_SV + Save_AV + Save_HV;
-    }
-
-    # skip static %Encode::Encoding since 5.20. GH #200.
-    # Let it be initialized by boot_Encode/Encode_XSEncoding
-    # if ( $fullname eq 'Encode::Encoding' ) {
-    #     $filter = Save_HV;
-    # }
 
     my $is_empty = $gv->is_empty;
     if ( !defined $gvname and $is_empty ) {    # 5.8 curpad name
@@ -173,7 +149,7 @@ sub save {
     my $name    = $package eq 'main' ? $gvname          : $fullname;
     my $cname   = $package eq 'main' ? cstring($gvname) : cstring($fullname);
     my $notqual = $package eq 'main' ? 'GV_NOTQUAL'     : '0';
-    debug( gv => "  GV name is $fancyname" );
+
     my $egvsym;
     my $is_special = ref($gv) eq 'B::SPECIAL';
 
@@ -230,9 +206,6 @@ sub save {
         init()->add(qq[$sym = gv_fetchpv($cname, $notqual, SVt_PV);]);
         init()->add( sprintf( "SvREFCNT(%s) = %u;", $sym, $gv->REFCNT ) );
         return $sym;
-    }
-    elsif ( $B::C::ro_inc and $fullname =~ /^main::([0-9])$/ ) {    # ignore PV regexp captures with -O2
-        $filter = Save_SV;
     }
 
     # gv_fetchpv loads Errno resp. Tie::Hash::NamedCapture, but needs *INC #90
@@ -410,6 +383,9 @@ sub get_savefields {
         $savefields &= ~Save_CV;
     }
 
+    # compute filter
+    $filter = normalize_filter( $filter, $fullname );
+
     # apply filter
     if ( $filter and $filter =~ qr{^[0-9]$} ) {
         $savefields &= ~$filter;
@@ -418,6 +394,29 @@ sub get_savefields {
     debug( gv => "XXXX $fullname -> $savefields" );
 
     return $savefields;
+}
+
+sub normalize_filter {
+    my ( $filter, $fullname ) = @_;
+
+    if ( $filter and $filter =~ m/ :pad/ ) {
+        $filter = 0;
+    }
+
+    # checked for defined'ness in Carp. So the GV must exist, the CV not
+    if ( $fullname =~ /^threads::(tid|AUTOLOAD)$/ and USE_ITHREADS() ) {
+        $filter = Save_CV;
+    }
+
+    # no need to assign any SV/AV/HV to them (172)
+    if ( $fullname =~ /^DynaLoader::dl_(require_symbols|resolve_using|librefs)/ ) {
+        $filter = Save_SV | Save_AV | Save_HV;
+    }
+    if ( $B::C::ro_inc and $fullname =~ /^main::([0-9])$/ ) {    # ignore PV regexp captures with -O2
+        $filter = Save_SV;
+    }
+
+    return $filter;
 }
 
 sub gv_fetchpv_string {
