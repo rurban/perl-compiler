@@ -95,6 +95,18 @@ sub savecv {
     $gv->save($fullname);
 }
 
+my $CORE_SYMS = {
+    'main::ENV'    => 'PL_envgv',
+    'main::ARGV'   => 'PL_argvgv',
+    'main::INC'    => 'PL_incgv',
+    'main::STDIN'  => 'PL_stdingv',
+    'main::STDERR' => 'PL_stderrgv',
+    "main::\010"   => 'PL_hintgv',     # ^H
+    "main::_"      => 'PL_defgv',
+    "main::@"      => 'PL_errgv',
+    "main::\022"   => 'PL_replgv',     # ^R
+};
+
 sub save {
     my ( $gv, $filter ) = @_;
     my $sym = objsym($gv);
@@ -173,30 +185,15 @@ sub save {
         }
     }
 
-    my $core_syms = {
-        ENV    => 'PL_envgv',
-        ARGV   => 'PL_argvgv',
-        INC    => 'PL_incgv',
-        STDIN  => 'PL_stdingv',
-        STDERR => 'PL_stderrgv',
-        "\010" => 'PL_hintgv',     # ^H
-        "_"    => 'PL_defgv',
-        "@"    => 'PL_errgv',
-        "\022" => 'PL_replgv',     # ^R
-    };
     my $is_coresym;
 
     # those are already initialized in init_predump_symbols()
     # and init_main_stash()
-    for my $s ( sort keys %$core_syms ) {
-        if ( $fullname eq 'main::' . $s ) {
-            $sym = savesym( $gv, $core_syms->{$s} );
-
-            # init()->add( sprintf( "SvREFCNT($sym) = %u;", $gv->REFCNT ) );
-            # return $sym;
-            $is_coresym++;
-        }
+    if ( $CORE_SYMS->{$fullname} ) {
+        $sym = savesym( $gv, $CORE_SYMS->{$fullname} );
+        $is_coresym++;
     }
+
     if ( $fullname =~ /^main::std(in|out|err)$/ ) {    # same as uppercase above
         init()->add(qq[$sym = gv_fetchpv($cname, $notqual, SVt_PVGV);]);
         init()->add( sprintf( "SvREFCNT(%s) = %u;", $sym, $gv->REFCNT ) );
