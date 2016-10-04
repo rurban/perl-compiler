@@ -277,10 +277,16 @@ sub save {
 
     if ( $fullname =~ /^main::std(in|out|err)$/ ) {    # same as uppercase above
         init()->add(qq[$gvsym = *(GV*) gv_fetchpv($cname, $notqual, SVt_PVGV);]);
+
+        # we are overwriting everything from what was saved... restore it for now
+        init()->add( sprintf( "SvREFCNT(%s) = %u;", $sym, $gv->REFCNT ) );
         return $sym;
     }
     elsif ( $fullname eq 'main::0' ) {                 # dollar_0 already handled before, so don't overwrite it
         init()->add(qq[$gvsym = *(GV*) gv_fetchpv($cname, $notqual, SVt_PV);]);
+
+        # we are overwriting everything from what was saved... restore it for now
+        init()->add( sprintf( "SvREFCNT(%s) = %u;", $sym, $gv->REFCNT ) );
         return $sym;
     }
 
