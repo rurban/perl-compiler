@@ -175,6 +175,12 @@ sub savegp_from_gv {
     return $saved_gps{$gp};
 }
 
+sub gvrefcnt {
+    my $gv = shift;
+
+    return $gv->REFCNT;
+}
+
 sub save {
     my ( $gv, $filter ) = @_;
 
@@ -207,7 +213,7 @@ sub save {
     my $xpvgv = sprintf( 'xpvgv_list[%d]', xpvgvsect()->index );
 
     {
-        my $gv_refcnt = $gv->REFCNT;    # TODO probably need more love for both refcnt (+1 ? extra flag immortal)
+        my $gv_refcnt = $gv->gvrefcnt;    # TODO probably need more love for both refcnt (+1 ? extra flag immortal)
         my $gv_flags  = $gv->FLAGS;
 
         gvsect()->comment("XPVGV*  sv_any,  U32     sv_refcnt; U32     sv_flags; union   { gp* } sv_u # gp*");
@@ -279,14 +285,14 @@ sub save {
         init()->add(qq[$gvsym = *(GV*) gv_fetchpv($cname, $notqual, SVt_PVGV);]);
 
         # we are overwriting everything from what was saved... restore it for now
-        init()->add( sprintf( "SvREFCNT(%s) = %u;", $sym, $gv->REFCNT ) );
+        init()->add( sprintf( "SvREFCNT(%s) = %u;", $sym, $gv->gvrefcnt ) );
         return $sym;
     }
     elsif ( $fullname eq 'main::0' ) {                 # dollar_0 already handled before, so don't overwrite it
         init()->add(qq[$gvsym = *(GV*) gv_fetchpv($cname, $notqual, SVt_PV);]);
 
         # we are overwriting everything from what was saved... restore it for now
-        init()->add( sprintf( "SvREFCNT(%s) = %u;", $sym, $gv->REFCNT ) );
+        init()->add( sprintf( "SvREFCNT(%s) = %u;", $sym, $gv->gvrefcnt ) );
         return $sym;
     }
 
@@ -332,13 +338,13 @@ sub save {
         }
 
         # we are overwriting everything from what was saved... restore it for now
-        init()->add( sprintf( "SvREFCNT(%s) = %u;", $sym, $gv->REFCNT ) );
+        init()->add( sprintf( "SvREFCNT(%s) = %u;", $sym, $gv->gvrefcnt ) );
     }
     elsif ( !$is_coresym ) {
         init()->add( "$gvsym = *(GV*)" . gv_fetchpv_string( $name, $gvadd, 'SVt_PV' ) . ";" );
 
         # we are overwriting everything from what was saved... restore it for now
-        init()->add( sprintf( "SvREFCNT(%s) = %u;", $sym, $gv->REFCNT ) );
+        init()->add( sprintf( "SvREFCNT(%s) = %u;", $sym, $gv->gvrefcnt ) );
     }
 
     init()->add(
