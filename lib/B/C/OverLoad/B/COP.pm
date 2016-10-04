@@ -196,11 +196,11 @@ sub save {
                 # cache gv_fetchfile
                 if ( !$copgvtable{$constpv} ) {
                     $copgvtable{$constpv} = B::GV::inc_index();
-                    init()->add( sprintf( "gv_list[%d] = gv_fetchfile(%s);", $copgvtable{$constpv}, $constpv ) );
+                    init()->add( sprintf( "gv_list[%d] = *(GV*) gv_fetchfile(%s);", $copgvtable{$constpv}, $constpv ) );
                 }
                 init()->add(
                     sprintf(
-                        "CopFILEGV_set(&cop_list[%d], gv_list[%d]); /* %s */",
+                        "CopFILEGV_set(&cop_list[%d], &gv_list[%d]); /* %s */",
                         $ix, $copgvtable{$constpv}, cstring($file)
                     )
                 );

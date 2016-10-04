@@ -687,17 +687,20 @@ sub save_gv_cv {
 
         $cvsym = $gvcv->save($fullname);
 
+        my $gvsym = $sym;
+        $gvsym =~ s{^&}{};
+
         # backpatch "$sym = gv_fetchpv($name, GV_ADD, SVt_PV)" to SVt_PVCV
         if ( $cvsym =~ /get_cv/ ) {
             if ( !$B::C::xsub{$package} and B::C::in_static_core( $package, $gvname ) ) {
                 my $in_gv;
                 for ( @{ init()->{current} } ) {
                     if ($in_gv) {
-                        s/^.*\Q$sym\E.*=.*;//;
-                        s/GvGP_set\(\Q$sym\E.*;//;
+                        s/^.*\Q$gvsym\E.*=.*;//;
+                        s/GvGP_set\(\Q$gvsym\E.*;//;
                     }
-                    if (/^\Q$sym = gv_fetchpv($name, GV_ADD, SVt_PV);\E/) {
-                        s/^\Q$sym = gv_fetchpv($name, GV_ADD, SVt_PV);\E/$sym = gv_fetchpv($name, GV_ADD, SVt_PVCV);/;
+                    if (/^\Q$gvsym = *(GV*)gv_fetchpv($name, GV_ADD, SVt_PV);\E/) {
+                        s/^\Q$gvsym = *(GV*)gv_fetchpv($name, GV_ADD, SVt_PV);\E/$gvsym = *(GV*)gv_fetchpv($name, GV_ADD, SVt_PVCV);/;
                         $in_gv++;
                         debug( gv => "removed $sym GP assignments $origname (core CV)" );
                     }
