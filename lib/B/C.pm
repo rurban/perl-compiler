@@ -364,14 +364,17 @@ BEGIN {
     if ($] > 5.021006) {
       B->import(qw(SVf_PROTECT CVf_ANONCONST SVs_PADSTALE));
     } else {
-      eval q[sub SVf_PROTECT(){ 0x0 }
-             sub CVf_ANONCONST(){ 0x0 }]; # unused
+      eval q[sub SVf_PROTECT()  { 0x0 }
+             sub CVf_ANONCONST(){ 0x0 }
+             sub SVs_PADSTALE() { 0x0 }
+            ]; # unused
     }
   } else {
     eval q[sub SVs_GMG()    { 0x00002000 }
            sub SVs_SMG()    { 0x00004000 }
            sub SVf_PROTECT(){ 0x0 }
            sub CVf_ANONCONST(){ 0x0 }
+           sub SVs_PADSTALE() { 0x0 }
           ]; # unused
   }
   if ($] < 5.018) {
