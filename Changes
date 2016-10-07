@@ -17,6 +17,7 @@
         Improve NV precision, use %17g (atoomic #373)
         Fix delayed cvref initialization of XS module functions (#376)
         Reset mg_flags without MGf_REFCOUNTED from the source (#390)
+        Support uselongdouble LDBL_MIN/LDBL_MAX constants
 
 1.54_03 2016-05-09 rurban
         Released with cperl-5.22.2
