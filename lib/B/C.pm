@@ -2896,6 +2896,7 @@ sub savepvn {
   }
   else {
     # If READONLY and FAKE use newSVpvn_share instead. (test 75)
+    # XXX IsCOW forgotten here. rather use a helper is_shared_hek()
     if ($PERL510 and $sv and (($sv->FLAGS & 0x09000000) == 0x09000000)) {
       warn sprintf( "Saving shared HEK %s to %s\n", cstring($pv), $dest ) if $debug{sv};
       my $hek = save_hek($pv,'',1);
@@ -2909,8 +2910,7 @@ sub savepvn {
         : ($sv and ref($sv) and $sv->can('CUR') and ref($sv) ne 'B::GV')
           ? $sv->CUR : length(pack "a*", $pv);
       if ($sv and IsCOW($sv) and ($B::C::cow or IsCOW_hek($sv))) {
-        $pv .= "\0\001";
-        $cstr = cstring($pv);
+        $cstr = substr($cstr,0,-1) . '\0\001"';
         $cur += 2;
       }
       warn sprintf( "Saving PV %s:%d to %s\n", $cstr, $cur, $dest ) if $debug{sv};
