@@ -26,7 +26,7 @@ EOF
 close FH;
 
 my $script = <<'EOF';
-use Ccode354i (); 
+BEGIN { require "./Ccode354i.pm"; }
 my $token = { expansion => "abcd", };
 print Ccode354i::check($token);
 EOF

@@ -22,8 +22,7 @@ EOF
 close FH;
 
 my $script = <<'EOF';
-use lib '.';
-use Ccode31i;
+BEGIN { require "./Ccode31i.pm"; }
 &Ccode31i::test();
 EOF
 
