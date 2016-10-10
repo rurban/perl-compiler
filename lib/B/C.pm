@@ -1279,19 +1279,6 @@ sub nvx ($) {
     elsif ($nvx == POSIX::DBL_MAX()) { #1.797693134862316e+308
       $sval = "DBL_MAX";
     }
-    if ($nvx == POSIX::LDBL_MIN()) {
-      $sval = "LDBL_MIN";
-    }
-    elsif ($nvx == POSIX::LDBL_MAX()) {
-      $sval = "LDBL_MAX";
-    }
-  } else {
-    if ($nvx == $dblmax) {
-      $sval = "DBL_MAX";
-    }
-    if ($nvx == $ldblmax) {
-      $sval = "LDBL_MAX";
-    }
   }
   else {
     if ($nvx == $dblmax) {
