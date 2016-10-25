@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.54_13';
+our $VERSION = '1.54_14';
 our (%debug, $check, %Config);
 BEGIN {
   require B::C::Config;
@@ -2908,7 +2908,7 @@ sub savepvn {
       my $str = substr $pv, 0, $max_string_len, '';
       push @init,
         sprintf( "Copy(%s, %s+%d, %u, char);",
-        cstring($str), $dest, $offset, length($str) );
+                 cstring($str), $dest, $offset, length($str) );
       $offset += length $str;
     }
     push @init, sprintf( "%s[%u] = '\\0';", $dest, $offset );
@@ -2927,22 +2927,21 @@ sub savepvn {
       }
     } else {
       my $cstr = cstring($pv);
-      my $cur = $cur ? $cur
-        : ($sv and ref($sv) and $sv->can('CUR') and ref($sv) ne 'B::GV')
-          ? $sv->CUR : length(pack "a*", $pv);
-      if ($sv and IsCOW($sv) and ($B::C::cow or IsCOW_hek($sv))) {
-        $cstr = substr($cstr,0,-1) . '\0\001"';
-        $cur += 2;
-      } else {
-        if (length(pack "a*", $pv) != $cur && (!$cur || $cstr eq "")) {
-          warn sprintf( "Invalid CUR for %s:%d to %s\n", $cstr, $cur, $dest )
-            if $verbose;
-          $cur = length(pack "a*", $pv);
-        }
+      if (!$cstr and $cstr == 0) {
+        $cstr = '""';
       }
-      warn sprintf( "Saving PV %s:%d to %s\n", $cstr, $cur, $dest ) if $debug{sv};
-      #$cur = 0 if $cstr eq "" and $cur == 7; # 317
-      push @init, sprintf( "%s = savepvn(%s, %u);", $dest, $cstr, $cur );
+      if ($sv and IsCOW($sv)) { # and ($B::C::cow or IsCOW_hek($sv)))
+        # This cannot be savepvn allocated. TODO: READONLY COW => static hek?
+        if ($cstr !~ /\\000\\00\d"$/) {
+          $cstr = substr($cstr,0,-1) . '\0\001"';
+          $cur += 2;
+        }
+        warn sprintf( "Saving COW PV %s to %s\n", $cstr, $dest ) if $debug{sv};
+        return (sprintf( "Newx(%s, sizeof(%s)-1, char);", $dest, $cstr ),
+                sprintf( "Copy(%s, %s, sizeof(%s)-1, char);", $cstr, $dest, $cstr ));
+      }
+      warn sprintf( "Saving PV %s to %s\n", $cstr, $dest ) if $debug{sv};
+      push @init, sprintf( "%s = Perl_savepvn(aTHX_ STR_WITH_LEN(%s));", $dest, $cstr );
     }
   }
   return @init;
@@ -6356,6 +6355,9 @@ EOT
     print <<'EOT';
 #ifndef SvREFCNT_inc_simple_NN
 #  define SvREFCNT_inc_simple_NN(sv)     (++SvREFCNT(sv), (SV*)(sv))
+#endif
+#ifndef STR_WITH_LEN
+  #define STR_WITH_LEN(s)  ("" s ""), (sizeof(s)-1)
 #endif
 EOT
   }
