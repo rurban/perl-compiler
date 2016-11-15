@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.54_14';
+our $VERSION = '1.54_15';
 our (%debug, $check, %Config);
 BEGIN {
   require B::C::Config;
@@ -5844,7 +5844,9 @@ sub B::HV::save {
     }
     if ($PERL518 and $hv->FLAGS & SVf_AMAGIC and length($name)) {
       # fix overload stringify
-      $init2->add( sprintf("mro_isa_changed_in(%s);  /* %s */", $sym, $name));
+      if ($hv->Gv_AMG) { # potentially removes the AMG flag
+        $init2->add( sprintf("mro_isa_changed_in(%s);  /* %s */", $sym, $name));
+      }
     }
     # Add aliases if namecount > 1 (GH #331)
     # There was no B API for the count or multiple enames, so I added one.

@@ -3,7 +3,7 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8.
 
-1.55 2016-08-?? rurban
+1.55 2016-12-?? rurban
         Support 5.24 and 5.24c
         * C: handle cperl OP_SIGNATURE
         Fix refcount of cop hints hashes with 5.22-nt (#220)
@@ -18,6 +18,9 @@
         Fix delayed cvref initialization of XS module functions (#376)
         Reset mg_flags without MGf_REFCOUNTED from the source (#390)
         Support uselongdouble LDBL_MIN/LDBL_MAX constants
+        Fixed some IsCOW savepvn lengths (#396)
+        Optimize mro_isa_changed_in initialization via a new B::HV::Gv_AMG
+          idea by bdraco
 
 1.54_03 2016-05-09 rurban
         Released with cperl-5.22.2
