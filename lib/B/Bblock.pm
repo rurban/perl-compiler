@@ -5,7 +5,7 @@ our $VERSION = '1.04';
 
 use Exporter ();
 @ISA       = "Exporter";
-@EXPORT_OK = qw(find_leaders);
+our @EXPORT_OK = qw(find_leaders);
 
 use B qw(peekop walkoptree walkoptree_exec
   main_root main_start svref_2object
