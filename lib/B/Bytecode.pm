@@ -3,7 +3,7 @@
 # Copyright (c) 1994-1999 Malcolm Beattie. All rights reserved.
 # Copyright (c) 2003 Enache Adrian. All rights reserved.
 # Copyright (c) 2008-2011 Reini Urban <rurban@cpan.org>. All rights reserved.
-# Copyright (c) 2011-2015 cPanel Inc. All rights reserved.
+# Copyright (c) 2011-2016 cPanel Inc. All rights reserved.
 # This module is free software; you can redistribute and/or modify
 # it under the same terms as Perl itself.
 
@@ -13,7 +13,7 @@
 
 package B::Bytecode;
 
-our $VERSION = '1.17';
+our $VERSION = '1.18';
 
 use 5.008;
 use B qw( main_cv main_root main_start
@@ -74,6 +74,7 @@ my ( $varix, $opix, %debug, %walked, %files, @cloop );
 my %strtab  = ( 0, 0 );
 my %svtab   = ( 0, 0 );
 my %optab   = ( 0, 0 );
+my %nextop;
 my %spectab = $PERL56 ? () : ( 0, 0 ); # we need the special Nullsv on 5.6 (?)
 my $tix     = $PERL56 ? 0 : 1;
 my %ops     = ( 0, 0 );
@@ -947,7 +948,12 @@ sub B::OP::bsave_thin {
     nice '-' . $op->name . '-', asm "ldop", $opix = $ix;
   }
   asm "op_flags",   $op->flags, op_flags( $op->flags ) if $op->flags;
-  asm "op_next",    $nextix;
+  if ($nextix) {
+    if (!exists $nextop{$$_}) {
+      asm "op_next", $nextix;
+      $nextop{$$_} = $nextix;
+    }
+  }
   asm "op_targ",    $op->targ if $op->type and $op->targ;  # tricky
   asm "op_private", $op->private if $op->private;          # private concise flags?
   if ($] >= 5.017 and $op->can('slabbed')) {
@@ -1313,8 +1319,14 @@ sub B::OP::opwalk {
     $ix = $_->ix while $_ = pop @oplist;
     #print "\n# rest of cloop\n";
     while ( $_ = pop @cloop ) {
-      asm "ldop",    $optab{$$_};
-      asm "op_next", $optab{ ${ $_->next } };
+      asm "ldop", $optab{$$_};
+      my $nextix = $optab{ ${ $_->next } };
+      if ($nextix) {
+        if (!exists $nextop{$$_}) {
+          asm "op_next", $nextix;
+          $nextop{$$_} = $nextix;
+        }
+      }
     }
     $ix;
   }
