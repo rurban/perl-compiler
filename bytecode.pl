@@ -383,6 +383,10 @@ for (@data) {
 	    $unsupp++ if ($ver =~ /^m/ and !$MULTI) or ($ver =~ /\!m/ and $MULTI);
 	    $ver =~ s/^\!?m//;
 	}
+	if ($ver =~ /c$/) {
+            $unsupp++ if !$CPERL;
+	    $ver =~ s/c$//;
+	}
 	# perl version 5.010000 => 10.000, 5.009003 => 9.003
 	# Have to round the float: 5.010 - 5 = 0.00999999999999979
 	my $pver = 0.0+(substr($],2,3).".".substr($],5));
@@ -1089,4 +1093,6 @@ __END__
 0   22	methop_methsv	cMETHOPx(PL_op)->op_u.op_meth_sv		svindex
 0 !i22	methop_rclass	cMETHOPx(PL_op)->op_rclass_sv			svindex
 0  i22	methop_rclass	cMETHOPx(PL_op)->op_rclass_targ			PADOFFSET
+0   24c op_rettype      PL_op->op_rettype				U8
+0   24c op_typechecked  PL_op->op_typechecked				U8
 

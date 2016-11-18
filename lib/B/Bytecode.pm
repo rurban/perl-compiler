@@ -61,13 +61,14 @@ use B::Concise;
 
 #################################################
 
-my $PERL56  = ( $] <  5.008001 );
-my $PERL510 = ( $] >= 5.009005 );
-my $PERL512 = ( $] >= 5.011 );
+my $PERL56  =  ( $] <  5.008001 );
+my $PERL510 =  ( $] >= 5.009005 );
+my $PERL512 =  ( $] >= 5.011 );
 #my $PERL514 = ( $] >= 5.013002 );
-my $PERL518 = ( $] >= 5.017006 );
-my $PERL520 = ( $] >= 5.019002 );
-my $PERL522 = ( $] >= 5.021005 );
+my $PERL518 =  ( $] >= 5.017006 );
+my $PERL520 =  ( $] >= 5.019002 );
+my $PERL522 =  ( $] >= 5.021005 );
+my $CPERL524 = ( $] >= 5.024 and $Config{usecperl} );
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 our ($quiet, $includeall, $savebegins, $T_inhinc);
 my ( $varix, $opix, %debug, %walked, %files, @cloop );
@@ -950,10 +951,8 @@ sub B::OP::bsave_thin {
   }
   asm "op_flags",   $op->flags, op_flags( $op->flags ) if $op->flags;
   if ($nextix) {
-    if (!exists $nextop{$$_}) {
-      asm "op_next", $nextix;
-      $nextop{$$_} = $nextix;
-    }
+    asm "op_next", $nextix;
+    $nextop{$$next} = $nextix;
   }
   asm "op_targ",    $op->targ if $op->type and $op->targ;  # tricky
   asm "op_private", $op->private if $op->private;          # private concise flags?
@@ -969,6 +968,12 @@ sub B::OP::bsave_thin {
     }
     elsif ($] >= 5.021011 and $op->can('moresib')) {
       asm "op_moresib", $op->moresib if $op->moresib;
+      if ($CPERL524 and $op->can('typechecked')) {
+        asm "op_typechecked", $op->typechecked if $op->typechecked;
+      }
+      if ($CPERL524 and $op->can('rettype')) {
+        asm "op_rettype", $op->rettype if $op->rettype;
+      }
     }
   }
 }
@@ -1012,6 +1017,7 @@ sub B::UNOP_AUX::bsave {
   for my $item (@aux_list) {
     $item->ix if ref $item;
   }
+  asm "ldop", $ix unless $ix == $opix;
   $op->B::OP::bsave($ix);
   asm "op_first", $firstix;
   asm "unop_aux", cstring $op->aux;
@@ -1022,6 +1028,7 @@ sub B::METHOP::bsave($$) {
   my $name    = $op->name;
   my $firstix = $name eq 'method' ? $op->first->ix : $op->meth_sv->ix;
   my $rclass  = $op->rclass->ix;
+  asm "ldop", $ix unless $ix == $opix;
   $op->B::OP::bsave($ix);
   if ($op->name eq 'method') {
     asm "op_first", $firstix;
@@ -1033,7 +1040,7 @@ sub B::METHOP::bsave($$) {
 
 sub B::BINOP::bsave($$) {
   my ( $op, $ix ) = @_;
-  if ( $op->name eq 'aassign' && $op->private & B::OPpASSIGN_HASH() ) {
+  if ( $PERL522 or ($op->name eq 'aassign' && $op->private & B::OPpASSIGN_HASH() )) {
     my $last   = $op->last;
     my $lastix = do {
       local *B::OP::bsave   = *B::OP::bsave_fat;
@@ -1042,7 +1049,7 @@ sub B::BINOP::bsave($$) {
       $last->ix;
     };
     asm "ldop", $lastix unless $lastix == $opix;
-    asm "op_targ", $last->targ;
+    asm "op_targ", $last->targ if $last->can('targ');
     $op->B::OP::bsave($ix);
     asm "op_last", $lastix;
   }
@@ -1053,7 +1060,7 @@ sub B::BINOP::bsave($$) {
 
 # not needed if no pseudohashes
 
-*B::BINOP::bsave = *B::OP::bsave if $PERL510;    #VERSION >= 5.009;
+*B::BINOP::bsave = *B::OP::bsave if $PERL510 and !$PERL522;  #VERSION >= 5.009;
 
 # deal with sort / formline
 
@@ -1087,6 +1094,7 @@ sub B::LISTOP::bsave($$) {
     #asm "comment", "first" unless $quiet;
     asm "op_sibling", $pushmarkix if $first->has_sibling;
 
+    asm "ldop", $ix unless $ix == $opix;
     $op->B::OP::bsave($ix);
     asm "op_first", $firstix;
   }
@@ -1096,6 +1104,14 @@ sub B::LISTOP::bsave($$) {
   elsif ( $name eq 'dbmopen' ) {
     require AnyDBM_File;
     $op->B::OP::bsave($ix);
+  }
+  elsif ($PERL522) {
+    my $firstix = $op->first->ix;
+    my $lastix  = $op->last->ix;
+    asm "ldop", $ix unless $ix == $opix;
+    $op->B::OP::bsave($ix);
+    asm "op_first", $firstix if $firstix;
+    asm "op_last",  $lastix  if $lastix;
   }
   else {
     $op->B::OP::bsave($ix);
@@ -1134,7 +1150,7 @@ sub B::OP::bsave_fat($$) {
 sub B::UNOP::bsave_fat {
   my ( $op, $ix ) = @_;
   my $firstix = $op->first->ix;
-
+  asm "ldop", $ix unless $ix == $opix;
   $op->B::OP::bsave($ix);
   asm "op_first", $firstix;
 }
@@ -1150,6 +1166,7 @@ sub B::BINOP::bsave_fat {
     asm "op_targ", $last->targ;
   }
 
+  asm "ldop", $ix unless $ix == $opix;
   $op->B::UNOP::bsave($ix);
   asm "op_last", $lastix;
 }
@@ -1159,6 +1176,7 @@ sub B::LOGOP::bsave {
   my $otherix = $op->other->ix;
   bwarn( B::peekop($op), ", ix: $ix" ) if $debug{o};
 
+  asm "ldop", $ix unless $ix == $opix;
   $op->B::UNOP::bsave($ix);
   asm "op_other", $otherix;
 }
@@ -1179,6 +1197,7 @@ sub B::PMOP::bsave {
       $rrarg = $op->pmreplroot;
       $rrop  = "op_pmreplrootpo";
     }
+    asm "ldop", $ix unless $ix == $opix;
     $op->B::BINOP::bsave($ix);
     if ( !$PERL56 and $op->pmstashpv )
     {    # avoid empty stash? if (table) pre-compiled else re-compile
@@ -1209,6 +1228,7 @@ sub B::PMOP::bsave {
     # 5.6 walks down the pmreplrootgv here
     # $op->pmreplroot->save($rrarg) unless $op->name eq 'pushre';
     my $stashix = $op->pmstash->ix unless $PERL56;
+    asm "ldop", $ix unless $ix == $opix;
     $op->B::BINOP::bsave($ix);
     asm "op_pmstash", $stashix unless $PERL56;
   }
@@ -1243,6 +1263,7 @@ sub B::SVOP::bsave {
   my ( $op, $ix ) = @_;
   my $svix = $op->sv->ix;
 
+  asm "ldop", $ix unless $ix == $opix;
   $op->B::OP::bsave($ix);
   asm "op_sv", $svix;
 }
@@ -1454,7 +1475,7 @@ sub compile {
   }
   sub bwarn { print STDERR "Bytecode.pm: @_\n" unless $quiet; }
 
-  keep_syn() if $PERL522;
+  #keep_syn() if $PERL522;
 
   for (@_) {
     if (/^-q(q?)/) {
