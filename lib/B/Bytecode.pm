@@ -18,7 +18,7 @@ our $VERSION = '1.18';
 use 5.008;
 use B qw( main_cv main_root main_start
 	  begin_av init_av end_av cstring comppadlist
-	  OPf_SPECIAL OPf_STACKED OPf_MOD
+	  OPf_SPECIAL OPf_STACKED OPf_MOD OPf_KIDS
 	  OPpLVAL_INTRO SVf_READONLY SVf_ROK );
 use B::Assembler qw(asm newasm endasm);
 
@@ -995,8 +995,8 @@ sub B::UNOP::bsave {
     ? $first->ix
     : 0;
 
-  # XXX Are there more new UNOP's with first?
-  $firstix = $first->ix if $name eq 'require'; #issue 97
+  # XXX Are there more new UNOP's with first? all ops with OPf_KIDS
+  $firstix = $first->ix if $op->flags & OPf_KIDS; #$name eq 'require'; #issue 97
   $op->B::OP::bsave($ix);
   asm "op_first", $firstix;
 }
@@ -1453,6 +1453,8 @@ sub compile {
     #*B::PMOP::bsave   = *B::PMOP::bsave_fat;
   }
   sub bwarn { print STDERR "Bytecode.pm: @_\n" unless $quiet; }
+
+  keep_syn() if $PERL522;
 
   for (@_) {
     if (/^-q(q?)/) {
