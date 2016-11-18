@@ -395,6 +395,8 @@ sub B::GV::ix {
         $name = $gv->STASH->NAME . "::"
           . ( B::class($gv) eq 'B::SPECIAL' ? '_' : $gv->NAME );
       }
+      return if $PERL512 and $name eq "Regexp::DESTROY";
+      return if $Config{usecperl} and $name eq "DynaLoader::dl_load_flags";
       nice "[GV $tix]";
       B::Assembler::maxsvix($tix) if $debug{A};
       asm "gv_fetchpvx", cstring $name;
@@ -922,9 +924,8 @@ sub B::HV::bwalk {
       }
     }
     else {
-      if ($] > 5.013005 and $hv->NAME eq 'B') { # see above. omit B prototypes
-	return;
-      }
+      return if $] > 5.013005 and $hv->NAME eq 'B'; # see above. omit B prototypes
+      return if $] > 5.022 and $hv->NAME eq 'Config';
       nice "[prototype $tix]";
       B::Assembler::maxsvix($tix) if $debug{A};
       asm "gv_fetchpvx", cstring ($hv->NAME . "::" . $k);
@@ -1777,7 +1778,7 @@ modified by Benjamin Stuhl <sho_pi@hotmail.com>.
 
 Rewritten by Enache Adrian <enache@rdslink.ro>, 2003 a.d.
 
-Enhanced by Reini Urban <rurban@cpan.org>, 2008-2012
+Enhanced by Reini Urban <rurban@cpan.org>, 2008-2016
 
 =cut
 

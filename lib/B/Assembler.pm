@@ -18,7 +18,7 @@ no warnings;           # XXX
 
 @ISA       = qw(Exporter);
 our @EXPORT_OK = qw(assemble_fh newasm endasm assemble asm maxopix maxsvix);
-our $VERSION   = '1.13';
+our $VERSION   = '1.14';
 
 use strict;
 my %opnumber;
@@ -317,6 +317,7 @@ sub gen_header_hash {
   }
   if ( $blversion ge "0.06_06" ) {
     $header->{perlversion} = $];
+    $header->{perlversion} .= 'c' if $Config{usecperl};
   }
   $header;
 }
