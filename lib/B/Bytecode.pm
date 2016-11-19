@@ -1017,7 +1017,6 @@ sub B::UNOP_AUX::bsave {
   for my $item (@aux_list) {
     $item->ix if ref $item;
   }
-  asm "ldop", $ix unless $ix == $opix;
   $op->B::OP::bsave($ix);
   asm "op_first", $firstix;
   asm "unop_aux", cstring $op->aux;
@@ -1028,7 +1027,6 @@ sub B::METHOP::bsave($$) {
   my $name    = $op->name;
   my $firstix = $name eq 'method' ? $op->first->ix : $op->meth_sv->ix;
   my $rclass  = $op->rclass->ix;
-  asm "ldop", $ix unless $ix == $opix;
   $op->B::OP::bsave($ix);
   if ($op->name eq 'method') {
     asm "op_first", $firstix;
@@ -1094,7 +1092,6 @@ sub B::LISTOP::bsave($$) {
     #asm "comment", "first" unless $quiet;
     asm "op_sibling", $pushmarkix if $first->has_sibling;
 
-    asm "ldop", $ix unless $ix == $opix;
     $op->B::OP::bsave($ix);
     asm "op_first", $firstix;
   }
@@ -1106,12 +1103,7 @@ sub B::LISTOP::bsave($$) {
     $op->B::OP::bsave($ix);
   }
   elsif ($PERL522) {
-    my $firstix = $op->first->ix;
-    my $lastix  = $op->last->ix;
-    asm "ldop", $ix unless $ix == $opix;
-    $op->B::OP::bsave($ix);
-    asm "op_first", $firstix if $firstix;
-    asm "op_last",  $lastix  if $lastix;
+    $op->B::BINOP::bsave($ix);
   }
   else {
     $op->B::OP::bsave($ix);
@@ -1150,7 +1142,6 @@ sub B::OP::bsave_fat($$) {
 sub B::UNOP::bsave_fat {
   my ( $op, $ix ) = @_;
   my $firstix = $op->first->ix;
-  asm "ldop", $ix unless $ix == $opix;
   $op->B::OP::bsave($ix);
   asm "op_first", $firstix;
 }
@@ -1158,15 +1149,14 @@ sub B::UNOP::bsave_fat {
 sub B::BINOP::bsave_fat {
   my ( $op, $ix ) = @_;
   my $last   = $op->last;
-  my $lastix = $op->last->ix;
-  bwarn( B::peekop($op), ", ix: $ix $last: $last, lastix: $lastix" )
+  my $lastix = $last->ix;
+  bwarn( B::peekop($op), ", ix: $ix last: $last, lastix: $lastix" )
     if $debug{o};
   if ( !$PERL510 && $op->name eq 'aassign' && $last->name eq 'null' ) {
     asm "ldop", $lastix unless $lastix == $opix;
     asm "op_targ", $last->targ;
   }
 
-  asm "ldop", $ix unless $ix == $opix;
   $op->B::UNOP::bsave($ix);
   asm "op_last", $lastix;
 }
@@ -1176,7 +1166,6 @@ sub B::LOGOP::bsave {
   my $otherix = $op->other->ix;
   bwarn( B::peekop($op), ", ix: $ix" ) if $debug{o};
 
-  asm "ldop", $ix unless $ix == $opix;
   $op->B::UNOP::bsave($ix);
   asm "op_other", $otherix;
 }
@@ -1197,7 +1186,6 @@ sub B::PMOP::bsave {
       $rrarg = $op->pmreplroot;
       $rrop  = "op_pmreplrootpo";
     }
-    asm "ldop", $ix unless $ix == $opix;
     $op->B::BINOP::bsave($ix);
     if ( !$PERL56 and $op->pmstashpv )
     {    # avoid empty stash? if (table) pre-compiled else re-compile
@@ -1228,7 +1216,6 @@ sub B::PMOP::bsave {
     # 5.6 walks down the pmreplrootgv here
     # $op->pmreplroot->save($rrarg) unless $op->name eq 'pushre';
     my $stashix = $op->pmstash->ix unless $PERL56;
-    asm "ldop", $ix unless $ix == $opix;
     $op->B::BINOP::bsave($ix);
     asm "op_pmstash", $stashix unless $PERL56;
   }
@@ -1263,7 +1250,6 @@ sub B::SVOP::bsave {
   my ( $op, $ix ) = @_;
   my $svix = $op->sv->ix;
 
-  asm "ldop", $ix unless $ix == $opix;
   $op->B::OP::bsave($ix);
   asm "op_sv", $svix;
 }
@@ -1337,7 +1323,9 @@ sub B::OP::opwalk {
     my $ix;
     my @oplist = ($PERL56 and $op->isa("B::COP"))
       ? () : $op->oplist; # 5.6 may be called by a COP
-    push @cloop, undef;
+    push @cloop, undef; # end marker
+    # note that unop,binop,listop first/last are missing from oplist,
+    # only logop and loop ops are pushed.
     $ix = $_->ix while $_ = pop @oplist;
     #print "\n# rest of cloop\n";
     while ( $_ = pop @cloop ) {
