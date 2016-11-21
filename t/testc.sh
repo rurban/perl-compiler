@@ -1426,9 +1426,18 @@ sub test() {
     "o";
 }'
 tests[391]='use warnings "closed"; eval "warn qq(\n); print qq(ok\n)";'
-tests[400]='use Class::XSAccessor { constructor => "build", accessors => [ "foo" ]};
-my $o = __PACKAGE__->build( foo => "ok" );
-print $o->foo() . "\n";'
+tests[400]='#TODO
+use Class::XSAccessor constructor => "new", accessors => [ "foo" ];
+my $o = main::->new( foo => "ok" );
+print $o->foo,"\n";'
+tests[4001]='require Class::XSAccessor;
+Class::XSAccessor->import(constructor => "new", accessors => [ "foo" ]);
+my $o = main::->new( foo => "ok" );
+print $o->foo,"\n";'
+tests[4002]='use Class::XSAccessor;
+Class::XSAccessor->import(constructor => "new", accessors => [ "foo" ]);
+my $o = main::->new( foo => "ok" );
+print $o->foo,"\n";'
 
 init
 
