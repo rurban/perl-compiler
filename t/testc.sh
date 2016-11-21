@@ -1426,6 +1426,9 @@ sub test() {
     "o";
 }'
 tests[391]='use warnings "closed"; eval "warn qq(\n); print qq(ok\n)";'
+tests[400]='use Class::XSAccessor { constructor => "build", accessors => [ "foo" ]};
+my $o = __PACKAGE__->build( foo => "ok" );
+print $o->foo() . "\n";'
 
 init
 
