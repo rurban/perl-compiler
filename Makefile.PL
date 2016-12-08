@@ -446,7 +446,9 @@ TAGS : $asmdata
     if ($] > 5.009 and defined($ExtUtils::MM_Unix::VERSION)) {
         my $ver = 0+$ExtUtils::MM_Unix::VERSION;
         # 8.0403 is the cperl 5.24.0 version based on 7.04_03
-        if ($ver == 8.0403 or $ver < 7.0509 or $ver == 7.1) {
+        if (($Config{usecperl} and $ver >= 8.0403)
+            or $ver < 7.0509 or $ver == 7.1)
+        {
             $result .= "\ntest :: subdirs-test\n\n";
         } else {
             $result .= "\ntest :: subdirs-test_\$(LINKTYPE)\n\n";
