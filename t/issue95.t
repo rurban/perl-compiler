@@ -69,6 +69,7 @@ sub compile_check {
   if ($found) {
     $found = $stderr !~ /save method_name "IO::Socket::blocking"/;
   }
+  $cmt = "TODO" if $] >= 5.022 and $Config{useithreads};
   ok(!$found, $cmt.', blocking as method_name saved');
 }
 
