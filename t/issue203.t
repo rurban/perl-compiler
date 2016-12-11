@@ -6,6 +6,10 @@ BEGIN {
     print "1..0 #SKIP Only if -d .git\n";
     exit;
   }
+  if ($] >= 5.024) {
+    print "1..0 #SKIP use open encoding deprecated\n";
+    exit;
+  }
   unshift @INC, 't';
   require TestBC;
 }
