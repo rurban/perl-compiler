@@ -60,6 +60,7 @@ ctestok(3, "CC", "ccode71i", $script,
       (($B::C::VERSION lt '1.42_57')
        or ($] > 5.010 and $] < 5.011)
        or ($ITHREADS and $] > 5.013)
+       or ($] >= 5.024)
       )
       ? "TODO CC Encode::decode croak: Assertion failed: (SvTYPE(TARG) == SVt_PVHV), function Perl_pp_padhv"
       : "CC");
