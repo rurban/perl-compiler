@@ -403,7 +403,7 @@ for (@data) {
 	}
     }
     # warn "unsupported $idx\t$ver\t$insn\n" if $unsupp;
-    if (!$unsupp or ($] >= 5.007 and $insn !~ /pad|xcv_name_hek|unop_aux/)) {
+    if (!$unsupp or ($] >= 5.007 and $insn !~ /pad|cop_seq|xcv_name_hek|unop_aux/)) {
 	$insn_name[$insn_num] = $insn;
 	push @insndata, [$insn_num, $unsupp, $insn, $lvalue, $rvalcast, $argtype, $flags];
 	# Find the next unused instruction number
@@ -1055,8 +1055,8 @@ __END__
 # 5.10.0 misses the RX_EXTFLAGS macro
 154 10-10.5 op_reflags  PM_GETRE(cPMOP)->extflags	U32
 154 11  op_reflags  	RX_EXTFLAGS(PM_GETRE(cPMOP))	U32
-155 10 	cop_seq_low	((XPVNV*)(SvANY(bstate->bs_sv)))->xnv_u.xpad_cop_seq.xlow  U32
-156 10	cop_seq_high	((XPVNV*)(SvANY(bstate->bs_sv)))->xnv_u.xpad_cop_seq.xhigh U32
+155 10-25.005	cop_seq_low	((XPVNV*)(SvANY(bstate->bs_sv)))->xnv_u.xpad_cop_seq.xlow  U32
+156 10-25.005	cop_seq_high	((XPVNV*)(SvANY(bstate->bs_sv)))->xnv_u.xpad_cop_seq.xhigh U32
 157 8	gv_fetchpvn_flags bstate->bs_sv			U32		x
 # restore dup to stdio handles 0-2
 158 0 	xio_ifp		bstate->bs_sv	  		char		x
