@@ -391,6 +391,9 @@ for (@data) {
 	if ($ver =~ /^<?8\-?/) {
 	    $ver =~ s/8/8.001/; # as convenience for a shorter table.
 	}
+        if ($ver eq '10-25.005' and $Config{usecperl}) {
+            $ver = '10-25.003'; # fixup for cperl cop_seq_low
+        }
 	# Add these misses to ASMDATA. TODO: To BYTERUN maybe with a translator, as the
 	# perl fields to write to are gone. Reading for the disassembler should be possible.
 	if ($ver =~ /^\>[\d\.]+$/) {
