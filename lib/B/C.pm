@@ -4267,13 +4267,14 @@ sub B::CV::save {
   }
 
   # XXX how is ANON with CONST handled? CONST uses XSUBANY [GH #246]
-  if ($isconst and !is_phase_name($cvname) and
+  if ($isconst and $cvxsub and !is_phase_name($cvname) and
     (
       (
-        $PERL522
-        and !( $CvFLAGS & SVs_PADSTALE )
-        and !( $CvFLAGS & CVf_WEAKOUTSIDE )
-        and !( $fullname && $fullname =~ qr{^File::Glob::GLOB} and ( $CvFLAGS & (CVf_ANONCONST|CVf_CONST) )  )
+       $PERL522
+       and !( $CvFLAGS & SVs_PADSTALE )
+       and !( $CvFLAGS & CVf_WEAKOUTSIDE )
+       and !( $fullname && $fullname =~ qr{^File::Glob::GLOB}
+              and ( $CvFLAGS & (CVf_ANONCONST|CVf_CONST) )  )
       )
       or (!$PERL522 and !($CvFLAGS & CVf_ANON)) )
     ) # skip const magic blocks (Attribute::Handlers)
@@ -4307,7 +4308,7 @@ sub B::CV::save {
       $init->add("$cvi = newCONSTSUB( $stsym, $name, (SV*)$vsym );");
       return savesym( $cv, $cvi );
     }
-    elsif ($sv and ref($sv) =~ /^B::[NRPI]/) {
+    elsif ($sv and ref($sv) =~ /^B::[ANRPI]/) { # use constant => ()
       my $vsym  = $sv->save;
       my $cvi = "cv".$cv_index++;
       $decl->add("Static CV* $cvi;");
