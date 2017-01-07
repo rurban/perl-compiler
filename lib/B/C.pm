@@ -563,14 +563,16 @@ sub DynaLoader::croak {die @_}
 
 # needed for init2 remap and Dynamic annotation
 sub dl_module_to_sofile {
-  my $module = shift or die "missing module name";
-  my $modlibname = shift or die "missing module filepath";
+  my $module = shift
+    or die 'dl_module_to_sofile($module, $path) missing module name';
+  my $modlibname = shift
+    or die 'dl_module_to_sofile($module, $path): missing module path for '.$module;
   my @modparts = split(/::/,$module);
   my $modfname = $modparts[-1];
   my $modpname = join('/',@modparts);
   my $c = @modparts;
   $modlibname =~ s,[\\/][^\\/]+$,, while $c--;    # Q&D basename
-  die "missing module filepath" unless $modlibname;
+  die "dl_module_to_sofile: empty modlibname" unless $modlibname;
   my $sofile = "$modlibname/auto/$modpname/$modfname.".$Config{dlext};
   return $sofile;
 }
@@ -6480,8 +6482,10 @@ EOT
     if (exists $xsub{$pkg}) { # check if not removed in between
       my ($stashfile) = $xsub{$pkg} =~ /^Dynamic-(.+)$/;
       # get so file from pm. Note: could switch prefix from vendor/site//
-      $init2_remap{$pkg}{FILE} = dl_module_to_sofile($pkg, $stashfile);
-      $remap++;
+      if ($stashfile) {
+        $init2_remap{$pkg}{FILE} = dl_module_to_sofile($pkg, $stashfile);
+        $remap++;
+      }
     }
   }
   if ($remap) {
