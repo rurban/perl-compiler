@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.55';
+our $VERSION = '1.55_01';
 our (%debug, $check, %Config);
 BEGIN {
   require B::C::Config;
@@ -2580,6 +2580,7 @@ sub B::PMOP::save {
   my $sym = objsym($op);
   return $sym if defined $sym;
   # 5.8.5-thr crashes here (7) at pushre
+  my $pushre = ($] >= 5.025006 or $CPERL56) ? "split" : "pushre";
   if ($] < 5.008008 and $ITHREADS and $$op < 256) { # B bug. split->first->pmreplroot = 0x1
     die "Internal B::walkoptree error: invalid PMOP for pushre\n";
     return;
@@ -2591,16 +2592,16 @@ sub B::PMOP::save {
 
   # under ithreads, OP_PUSHRE.op_replroot is an integer. multi not.
   $replrootfield = sprintf( "s\\_%x", $$replroot ) if ref $replroot;
-  if ( $ITHREADS && $op->name eq "pushre" ) {
+  if ( $ITHREADS && $op->name eq $pushre ) {
     warn "PMOP::save saving a pp_pushre as int ${replroot}\n" if $debug{gv};
     $replrootfield = "INT2PTR(OP*,${replroot})";
   }
-  elsif ($$replroot) {
+  elsif (ref $replroot && $$replroot) {
     # OP_PUSHRE (a mutated version of OP_MATCH for the regexp
     # argument to a split) stores a GV in op_pmreplroot instead
     # of a substitution syntax tree. We don't want to walk that...
-    if ( $op->name eq "pushre" ) {
-      warn "PMOP::save saving a pp_pushre with GV $gvsym\n" if $debug{gv};
+    if ( $op->name eq $pushre ) {
+      warn "PMOP::save saving a pp_$pushre with GV $gvsym\n" if $debug{gv};
       $gvsym = $replroot->save;
       $replrootfield = "NULL";
       $replstartfield = $replstart->save if $replstart;
