@@ -2593,7 +2593,7 @@ sub B::PMOP::save {
   # under ithreads, OP_PUSHRE.op_replroot is an integer. multi not.
   $replrootfield = sprintf( "s\\_%x", $$replroot ) if ref $replroot;
   if ( $ITHREADS && $op->name eq $pushre ) {
-    warn "PMOP::save saving a pp_pushre as int ${replroot}\n" if $debug{gv};
+    warn "PMOP::save saving a pp_$pushre as int ${replroot}\n" if $debug{gv};
     $replrootfield = "INT2PTR(OP*,${replroot})";
   }
   elsif (ref $replroot && $$replroot) {
