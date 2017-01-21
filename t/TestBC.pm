@@ -1326,6 +1326,7 @@ sub todo_tests_default {
         #push @todo, (48) if $] >= 5.018; # opfree
         push @todo, (48) if $what eq 'c_o4' and $] < 5.021 and $ITHREADS;
         push @todo, (8,18,19,25,26,28)  if $what eq 'c_o4' and !$ITHREADS;
+        #push @todo, (10) if $what eq 'c_o4' and $] > 5.023;
         push @todo, (29) if $] >= 5.021006 and $ITHREADS;
         push @todo, (10,15,27,41,42,43,44,45,49,50)
           if $] >= 5.021006 and $what eq 'c_o4';
