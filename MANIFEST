@@ -273,6 +273,7 @@ t/pg.pl
 t/qr_loaded_module.pm
 t/regex-dna.pl
 t/release-testing.sh
+t/sigs.t
 t/stash.t
 t/stashes.t
 t/test10
