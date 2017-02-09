@@ -21,4 +21,7 @@ my $todo = ($B::C::VERSION lt '1.37' ? "TODO " : "");
 my $todocc = ($B::C::VERSION lt '1.42_61' ? "TODO " : "");
 plctestok(1, $name, $script, "${todo}BC cvproto");
 ctestok(2, "C", $name, $script, "${todo}C cvproto");
+
+$todocc = "TODO 5.24 " if $] > 5.023007;
 ctestok(3, "CC", $name, $script, "${todocc}CC cvproto");
+

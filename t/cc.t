@@ -11,6 +11,7 @@ BEGIN {
 use strict;
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 #my $ITHREADS  = ($Config{useithreads});
+my $CPERL = $Config{usecperl};
 
 prepare_c_tests();
 

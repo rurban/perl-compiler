@@ -1,5 +1,6 @@
 * Fixes
 
+BC_heavy: sanify INC before the compilers pollute them (toddr,atoomic)
 attribute handlers (i.e. run-time attributes)
 compile-time perlio layers (e.g. use open ...)
 compile-time re-eval groups (?{})

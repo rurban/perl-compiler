@@ -3,7 +3,7 @@
 #      Copyright (c) 1996, 1997, 1998 Malcolm Beattie
 #      Copyright (c) 2008, 2009, 2010, 2011 Reini Urban
 #      Copyright (c) 2010 Nick Koston
-#      Copyright (c) 2011, 2012, 2013, 2014, 2015, 2016 cPanel Inc
+#      Copyright (c) 2011, 2012, 2013, 2014, 2015, 2016, 2017 cPanel Inc
 #
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.54_16';
+our $VERSION = '1.55';
 our (%debug, $check, %Config);
 BEGIN {
   require B::C::Config;

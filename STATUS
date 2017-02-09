@@ -20,17 +20,20 @@ The CPAN Bytecode compiler is disabled for 5.6, we keep the old.
 The old core compiler fails for 50% of the testcases.
 
 Windows and other OS with strict linking <5.16 will fail to install due to some
-not exported libperl symbols. Looks at the patches in ramblings.
+not exported libperl symbols. Looks at the patches in ramblings or use cperl,
+which includes the compilers.
 
-Security: The latest released compiler version is only recommended up to 5.14.4.
-Newer perl versions do work, but 5.16.x-5.20.0 upstream are too insecure
-to be recommended for production yet.
+Security:
+The latest released compiler version is only recommended up to 5.14.4.
+Newer perl versions do work, but 5.16.x-5.26 upstream are too insecure
+to be recommended for production.
 5.20 finally properly handles unicode names, but identifiers and package
 names are still handled as binary blobs, which could lead to TR39 issues.
-Check your code for syntax spoofs, confusables, strip \\0 from package names
-and enable use warnings 'syscalls'.
-There is no strict 'names' pragma and no confusables pragma yet.
+Check your code automatically (not manually, because new identifiers
+are not identifiable anymore) for syntax spoofs, confusables, strip
+\\0 from package names and enable use warnings 'syscalls'.
 See http://websec.github.io/unicode-security-guide/
+cperl since 5.26 fixed all the known issues.
 
 C and CC: Same ok and less failures as with 5.6, 5.8 and 5.9.4.
 In 5.8.8 and 5.8.9 we have much less errors in the testsuite for the
@@ -40,13 +43,15 @@ Most B::C and B::CC bugs fixed.
 Compatibility added for all major releases since 5.6.2
 
 Open Problems for B::C:
-  See google issues.
+See github issues.
 
 See below at the detailed status of the major releases.
 
 TEST STATUS
 -----------
-Regularily tested on cygwin1.7, darwin 10.8/intel, centos4, centos5, centos6,
+Regularily tested with every cperl update, since it is in core there.
+
+Regularily tested on cygwin1.7, darwin 64bit intel, centos5, centos6, centos7,
 debian5, debian6, freebsd7, freebsd8, solaris10/intel sunpro, openbsd49, netbsd.
 With the respective default gcc and clang compilers, with the latest address-sanitizer
 versions.
@@ -54,7 +59,7 @@ versions.
 Not so regurarily on darwin 10.4/ppc, strawberry-5.10.1, strawberry-5.12.2,
 strawberry-5.14, strawberry-5.16 and activeperl-5.10.1/msvc8
 
-List of failed tests.
+List of failed tests:
 
 CORE (old)
 ----
@@ -114,11 +119,24 @@ Compile-time status from top100:
                     Module::Build (out of memory/use-after-free)
 5.20.0     fail 1%  ExtUtils::ParseXS (re-eval)
 
-Run-time tests not yet fully done
+cperl status
+------------
+C and CC are shipped with cperl, hence it is supported.
+Also all merges from core which are not rejected.
 
-5.21.2 status
+5.26 status
 -----------
-Bytecode: sibling/lastsib with PERL_OP_PARENT broken for sort (18,19,25)
+The new signatures are not yet supported (the 3 ARG ops).
+
+5.24 status
+-----------
+stable C, used in production
+Bytecode still broken, some CC tests got broken with 5.23.9
+
+5.22 status
+-----------
+Bytecode: broken by upstream. refused to fix it.
+sibling/lastsib with PERL_OP_PARENT broken for sort (18,19,25)
 
 5.20 status
 -----------
@@ -131,7 +149,7 @@ fully supported since 1.48
 5.10, 5.12, 5.14, 5.16, 5.18, 5.20 status
 ----------------------------------------
 TODO for B::C
-  see google issues https://code.google.com/p/perl-compiler/issues/
+  see github issues https://github.com/rurban/perl-compiler/issues/
   Most of them have either easy workarounds or are not fixable.
 
   - attribute handlers (i.e. run-time attributes)
@@ -140,12 +158,11 @@ TODO for B::C
   - smartmatch subrefs
   - compile-time stash-magic delete renames to ANON
 
-Fix CC 
+Fix CC
   several other issues detected (and mostly fixed) by Heinz Knutzen
   minimize pad copies from local to pad
   label not defined (utf8::SWASHNEW)
   -faelem is fast but still a bit unstable
-  -funroll-loops by Will Braswell not yet merged
 
 DONE
 ----

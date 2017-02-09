@@ -2,7 +2,7 @@
 
 	Copyright (c) 1996, 1997, Malcolm Beattie
 	Copyright (c) 2008, 2009, 2010, 2011 Reini Urban
-	Copyright (c) 2012, 2013, 2014, 2015, 2016 cPanel Inc
+	Copyright (c) 2012, 2013, 2014, 2015, 2016, 2017 cPanel Inc
 
 Homepage: http://www.perl-compiler.org/
 Releases: http://search.cpan.org/dist/B-C/
@@ -11,7 +11,7 @@ Code:     http://github.com/rurban/perl-compiler/
 
 OVERVIEW
 
-Malcom Beattie's perl compiler ("perlcc") updated to 5.10 - 5.22 and cperl,
+Malcom Beattie's perl compiler ("perlcc") updated to 5.10 - 5.24 and cperl,
 with most bugs fixed (also for 5.6. and 5.8) and new features
 added. It compiles to C or platform-compatible Bytecode.
 
@@ -19,11 +19,11 @@ Releases are at http://search.cpan.org/dist/B-C/
 
 Development is in the master branch at https://github.com/rurban/perl-compiler,
 the stable branch is called 'release', the newest perl releases usually don't work
-immediately. I typically need 6 months to catch up.
+immediately. I typically need 6 months to catch up for perl5. With cperl B-C is
+included in CORE, so this is supported to work there.
 
 Known issues:
-              See https://code.google.com/p/perl-compiler/issues/
-              (Soon at http://github.com/rurban/perl-compiler/issues)
+      See https://github.com/rurban/perl-compiler/issues/
 
 * run-time attributes (e.g. use open attributes, Attribute::Handlers, ...),
   but ok at compile-time.
@@ -42,6 +42,7 @@ Known issues:
   * IO::Socket::SSL > 1.995 (#317, RT 95452)
   * DBD::mysql > 4.027 (RT 97625)
   * Todo: FCGI, Coro, Moose with meta->make_immutable
+  * Class::XSAccessor see t/testc.sh 400 for 2 of 3 possibilities how to use it
 
 Mailinglist:
   http://groups.google.com/group/perl-compiler perl-compiler@googlegroups.com
@@ -60,30 +61,30 @@ For 5.14 and 5.15 I recommend also the following patches:
   ramblings/revert-B-load-BEGIN.patch (The 5.14.1 version)
   ramblings/Carp-wo-B.patch
 
-We generally discourage the use of 5.16 and 5.18 for unhandled and
+We generally discourage the use of perl since 5.16 unhandled and
 unacknowledged security problems with the implementation of "unicode"
 symbols and packagenames, where they really implemented binary names
 for all symbols without any checks and further support of such binary
-names. See the warning at perl Makefile.PL.
+names. Identifiers are not identifiable anymore.
+See the warning at perl Makefile.PL.
 5.20 improved support for binary names for most syscalls, dumpers and
 APIs, but TR39 and strict names are still not handled, the problems
 are not understood and reactions are generally hostile.
-The best perl versions for the compiler are 5.14.4, 5.22.1 and cperl-5.22.2
-
-Summarized:
-Perl handling of new unicode identifiers - package and symbol names since 5.16 -
-without proper TR39 handling is considered a security risc and is not fully supported.
-See http://websec.github.io/unicode-security-guide/
-Check your code for syntax spoofs, confusables, esp. strip \\0 from package names.
-Enable use warnings 'syscalls'. There is no use strict 'names' yet. You cannot disable
-binary symbolname support with a configure option.
-
+5.18 made it 20% bigger with the implementation of COW strings.
+Most strings cannot be stored statically anymore since then.
+The best perl versions for the compiler are 5.14.4, 5.22.1 and cperl,
+since these are the most tested versions, where the coretest suite passes.
 
 USAGE
 
 The Bytecode, C and CC backends are now all functional
 enough to compile almost the whole of the main perl test
 suite and 99-100% of the top100 modules.
+
+Bytecode was broken upstream with 5.22
+CC added a lot of new failures with 5.24
+cperl is far superior over perl5, esp. with its advanced compiler
+support and less breakage.
 
 In the case of the CC backend, any failures are all
 due to differences and/or known bugs documented below.
@@ -348,7 +349,7 @@ LICENSE
     Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
 Reini Urban
-2016-02-25
+2017-02-10
 
 Malcolm Beattie
 2 September 1996

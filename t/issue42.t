@@ -19,6 +19,9 @@ f1();
 print do { 7; 2 }, "\n";
 EOF
 
-# fixed with r596. remove enter/leave from %no_stack, sp sync.
-ctest(1, '^2$', "CC", "ccode42i", $script,
-      'CC uses value from void context in next list context, fixed with r596');
+TODO: {
+  local $TODO = "broken with 5.24" if $] > 5.023007;
+  # fixed with r596. remove enter/leave from %no_stack, sp sync.
+  ctest(1, '^2$', "CC", "ccode42i", $script,
+        'CC uses value from void context in next list context, fixed with r596');
+}

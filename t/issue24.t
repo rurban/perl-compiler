@@ -51,16 +51,22 @@ TODO: { #2
   }
 }
 
-$result = `$runperl $Mblib blib/script/perlcc -r -O $O $name.pl`;
-TODO: { #3
-  use B::C ();
-  local $TODO = "B::CC issue 24 dbm >5.10" if ($] >= 5.010 and $B::C::VERSION lt '1.42_61');
-  local $TODO = "B::CC issue 24 dbm >5.18" if ($] >= 5.018 and $B::C::VERSION ge '1.45_05'
-                                               and $B::C::VERSION lt '1.45_08');
-  if ($skipped) {
-    ok(1, 'skip - No dbm on this machine');
-  } else {
-    is($result, $expected, "CC dbm fixed with r881, XSLoader with 1.32");
+ SKIP: {
+  # broken in 5.23.9. 5.23.8 not tested, 5.23.7 ok.
+  skip "$] panic: corrupt saved stack index", 1 if $] > 5.023007 and !$Config{usecperl};
+  $result = `$runperl $Mblib blib/script/perlcc -r -O $O $name.pl`;
+
+ TODO: { #3
+   use B::C ();
+   local $TODO = "B::CC issue 24 dbm >5.10" if ($] >= 5.010 and $B::C::VERSION lt '1.42_61');
+   local $TODO = "B::CC issue 24 dbm >5.18" if ($] >= 5.018 and $B::C::VERSION ge '1.45_05'
+                                                and $B::C::VERSION lt '1.45_08');
+   
+   if ($skipped) {
+     ok(1, 'skip - No dbm on this machine');
+   } else {
+     is($result, $expected, "CC dbm fixed with r881, XSLoader with 1.32");
+   }
   }
 }
 

@@ -790,7 +790,10 @@ sub run_cc_test {
     ($fnbackend,$opt) = $fnbackend =~ /^(cc?)(,-o.)?/;
     $opt =~ s/,-/_/ if $opt;
     $opt = '' unless $opt;
-    #if ($] > 5.021006 and $fnbackend eq 'cc') { print "ok $cnt # skip CC for 5.22 WIP\n"; return 1; }
+    #if ($] > 5.023007 and $fnbackend eq 'cc' and !$Config{usecperl}) {
+        #print "ok $cnt # skip CC for 5.24\n";
+        #return 1;
+    #}
     use Config;
     require B::C::Config;
     # note that the smokers run the c.t and c_o3.t tests in parallel, with possible
@@ -1308,6 +1311,7 @@ sub todo_tests_default {
     my $what = shift;
     my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
     my $ITHREADS  = ($Config{useithreads});
+    my $CPERL     = ($Config{usecperl});
 
     my @todo  = ();
     # no IO::Scalar
@@ -1352,10 +1356,11 @@ sub todo_tests_default {
 	#push @todo, (27)    if $] > 5.008008 and $] < 5.009 and $what eq 'cc_o2';
         push @todo, (103)   if ($] >= 5.012 and $] < 5.014 and !$ITHREADS);
         push @todo, (12,19) if $] >= 5.019; # XXX had 25 also
-        push @todo, (25)    if $] >= 5.021006 and !$Config{usecperl};
+        push @todo, (25)    if $] >= 5.021006 and !$CPERL;
 	push @todo, (29)    if $] >= 5.021006 and $what eq 'cc_o1';
 	push @todo, (24,29) if $] >= 5.021006 and $what eq 'cc_o2';
-        push @todo, (103)   if ($Config{usecperl} and $ITHREADS);
+        push @todo, (103)   if $CPERL and $ITHREADS;
+        push @todo, (9,10,15,24,26,27,41..45,103) if $] > 5.023007 and !$CPERL;
     }
     push @todo, (48)   if $] > 5.007 and $] < 5.009 and $^O =~ /MSWin32|cygwin/i;
     return @todo;

@@ -3,17 +3,16 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8.
 
-1.55 2016-12-?? rurban
-        Support 5.24 and 5.24c
-        * C: handle cperl OP_SIGNATURE
+1.55 2017-02-10 rurban
+        * C: Support 5.24 and 5.24c (ByteLoader and CC got broken with 5.22)
+        Handle cperl OP_SIGNATURE,  but not 5.26 signatures with its 3 new ops.
         Fix refcount of cop hints hashes with 5.22-nt (#220)
         Add missing B::FAKEOP::rettype for cperl-5.24, causing SEGV on B::CC
         Fixed shared xpviv with 5.24 on 32bit.
-        Fix various compiler warnings in ByteLoader
         Fix bytecode.pl call in cperl core.
         Optimize CopFILE_set by caching gv_fetchfile (CPANEL-7887)
         Abstract utf8_heavy loader (CPANEL-5417, CPANEL-6105, #369, #364) fixing
-        redefinition warnings, fixing %INC (atoomic)
+          redefinition warnings, fixing %INC (atoomic)
         Improve NV precision, use %17g (atoomic #373)
         Fix delayed cvref initialization of XS module functions (#376)
         Reset mg_flags without MGf_REFCOUNTED from the source (#390)
@@ -21,6 +20,12 @@
         Fixed some IsCOW savepvn lengths (#396)
         Optimize mro_isa_changed_in initialization via a new B::HV::Gv_AMG
           idea by bdraco
+        * ByteLoader: Fix various compiler warnings.
+        Still broken upstream since 5.22
+        * CC: PERL_OP_PARENT and 5.6 and 5.22 fixes.
+        support utf8 labels.
+        5.24 mostly broken still, cperl 5.24c doing fine though.
+        * META: fixed the bugtracker and repository
 
 1.54_03 2016-05-09 rurban
         Released with cperl-5.22.2

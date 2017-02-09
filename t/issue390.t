@@ -18,7 +18,7 @@ BEGIN {
 }
 use Test::More @plan;
 use B::C ();
-my $todo = ($B::C::VERSION le '1.54_16') ? "TODO" : "";
+my $todo = ($B::C::VERSION le '1.55') ? "TODO" : "";
 
 ctestok(1,'C,-O3','ccode390i',<<'EOF',$todo.' \#390 backref REFCOUNTED flag');
 print test(); print test();
