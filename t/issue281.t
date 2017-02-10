@@ -6,7 +6,9 @@ BEGIN {
   unshift @INC, 't';
   require TestBC;
 }
-use Test::More tests => 3;
+use Test::More;
+plan skip_all => "no 5.26 support yet" if $] > 5.025003;
+plan tests => 3;
 use B::C ();
 use Config;
 my $cmt = 'wrong @- values';

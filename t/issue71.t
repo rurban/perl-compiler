@@ -47,10 +47,11 @@ EOF
 # rx: (?^i:^(?:US-?)ascii$)"
 # 5.8 failed until 1.45_07-3a25dfd at SvTEMP_off(lexwarn0) for lexwarn0=0 instead of Nullsv
 use B::C;
+my $todo = $] > 5.025003 ? 'TODO 5.26 ' : '';
 ctestok(2, "C", "ccode71i", $script,
 	($B::C::VERSION lt '1.35' or ($] > 5.010 and $] < 5.011))
         ? "TODO C reg_temp_copy from invalid r->offs"
-        : "C alias reg_temp_copy failed: Unknown encoding 'UTF-8'");
+        : $todo."C alias reg_temp_copy failed: Unknown encoding 'UTF-8'");
 
 SKIP: {
 #skip "hangs", 1 if !$DEBUGGING;

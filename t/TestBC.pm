@@ -923,8 +923,8 @@ sub run_cc_test {
                     return 1;
                 }
             }
-            if ($todo and $todo =~ /TODO/) {
-                $todo =~ s/TODO //;
+            if ($todo and $todo =~ /TODO /) {
+                $todo =~ s/TODO //g;
               TODO:
                 {
                     local $TODO = $todo;
@@ -942,16 +942,21 @@ sub run_cc_test {
         ($result,$out,$stderr) = run_cmd($exe, 5);
         if (defined($out) and !$result) {
             if ($out =~ /^$expect$/) {
-                ok(1, $todo eq '#' ? "" : " $todo");
+                if ($todo eq '#') {
+                    ok(1);
+                } else {
+                    ok(1, $todo);
+                }
                 unlink ($test, $cfile, $exe, @obj) unless $keep_c;
                 return 1;
             } else {
                 # cc test failed, double check uncompiled
-                $got = run_perl(verbose  => $ENV{TEST_VERBOSE}, # for debugging
-                                nolib    => $ENV{PERL_CORE} ? 0 : 1, # include ../lib only in CORE
-                                stderr   => 1, # to capture the "ccode.pl syntax ok"
-                                timeout  => 10,
-                                progfile => $test);
+                $got = run_perl
+                  (verbose  => $ENV{TEST_VERBOSE}, # for debugging
+                   nolib    => $ENV{PERL_CORE} ? 0 : 1, # include ../lib only in CORE
+                   stderr   => 1, # to capture the "ccode.pl syntax ok"
+                   timeout  => 10,
+                   progfile => $test);
                 if (! $? and $got =~ /^$expect$/) {
                     ok(1, "$todo wanted: \"$expect\", got: \"$out\"");
                 } else {
@@ -966,11 +971,11 @@ sub run_cc_test {
         }
     }
     if ($todo and $todo =~ /TODO/) {
-	$todo =~ s/TODO //;
+	$todo =~ s/#TODO//g;
       TODO:
         {
-	    local $TODO = $todo;
-            ok(0, "$todo wanted: \"$expect\", \$\? = $?, got: \"$out\"");
+	    local $TODO = $todo ? $todo : $];
+            ok(0, "wanted: \"$expect\", \$\? = $?, got: \"$out\"");
 	}
     } else {
         ok(0, "wanted: \"$expect\", \$\? = $?, got: \"$out\"");
@@ -1152,7 +1157,7 @@ sub plctest {
     chomp $out;
     my $ok = $out =~ /$expected/;
     if ($todo and $todo =~ /TODO/) {
-	$todo =~ s/TODO //;
+	$todo =~ s/TODO //g;
       TODO: {
 	    local $TODO = $todo;
 	    ok($ok);
@@ -1175,7 +1180,11 @@ sub ctest {
     my ($num, $expected, $backend, $base, $script, $todo) =  @_;
     my $name = $base."_$num";
     my $b = $backend; # protect against parallel test name clashes
-    #if ($] > 5.021006 and $backend =~ /^CC/i) { ok(1, "skip CC for 5.22 WIP"); return 1; } # temp 5.22
+    my $CPERL = $Config{usecperl};
+    #if ($] > 5.021006 and $backend =~ /^CC/i) { ok(1, "skip CC for 5.22 WIP"); return 1; }
+    #if ($] >= 5.025 and !$CPERL and $todo !~ /TODO /) {
+    #    $todo .= 'TODO  - no 5.26 yet';
+    #}
     $b =~ s/-(D.*|f.*|v),//g;
     $b =~ s/-/_/g;
     $b =~ s/[, ]//g;
@@ -1215,7 +1224,7 @@ sub ctest {
             ok(1, "skip MSVC"); return 1;
         }
 	if ($todo and $todo =~ /TODO/) {
-	    $todo =~ s/TODO //;
+	    $todo =~ s/TODO //g;
           TODO: {
                 local $TODO = $todo;
                 ok(undef, "failed to compile");
@@ -1240,7 +1249,7 @@ sub ctest {
             }
         }
 	if ($todo and $todo =~ /TODO/) {
-	    $todo =~ s/TODO //;
+	    $todo =~ s/TODO //g;
           TODO: {
                 local $TODO = $todo;
                 ok ($out =~ /$expected/);
@@ -1251,7 +1260,7 @@ sub ctest {
         }
     } else {
 	if ($todo and $todo =~ /TODO/) {
-	    $todo =~ s/TODO //;
+	    $todo =~ s/TODO //g;
           TODO: {
                 local $TODO = $todo;
                 ok (undef);
@@ -1294,7 +1303,7 @@ sub ccompileok {
     my $ok = -e $name or -e "$name.exe";
     if ($todo and $todo =~ /TODO/) {
       TODO: {
-	    $todo =~ s/TODO //;
+	    $todo =~ s/TODO //g;
             local $TODO = $todo;
             ok($ok);
         }
@@ -1321,6 +1330,7 @@ sub todo_tests_default {
     push @todo, 28 if $] > 5.023 and
       ($Config{cc} =~ / -m32/ or $Config{ccflags} =~ / -m32/);
     push @todo, (21, 38) if $^O eq 'cygwin'; #hangs
+    push @todo, (15,27,41..45) if $] >= 5.025 and !$CPERL;
 
     if ($what =~ /^c(|_o[1-4])$/) {
         # a regression

@@ -8,6 +8,7 @@ BEGIN {
   require TestBC;
 }
 use Test::More tests => 2;
+use Config;
 
 my $todo = ($] > 5.009 and $] < 5.011) ? "TODO " : "";
 ctestok(1, 'C,-O3', 'ccode338i', <<'EOF', $todo.'C #338 qr utf8');
@@ -15,6 +16,7 @@ use utf8; my $l = "ñ"; my $re = qr/ñ/; print $l =~ $re ? qq{ok\n} : length($l)
 EOF
 
 # $todo = ($] > 5.021) ? "TODO " : $todo; # 5.22 fixed with B-C-1.52_13
+if ($[ < 5.025 or $Config{usecperl}) {
 ctestok(2, 'C,-O3', 'ccode333i', <<'EOF', $todo.'C #333 qr utf8');
 use encoding "utf8";
 my @hiragana =  map {chr} ord("ぁ")..ord("ん");
@@ -26,3 +28,6 @@ $str = $hiragana;
 $str =~ s/([ぁ-ん])/$h2k{$1}/go;
 print $str eq $katakana ? "ok\n" : "not ok\n$hiragana\n$katakana\n";
 EOF
+} else {
+  ok(1, "SKIP encoding pragma removed in v5.26 (hint: use cperl)");
+}

@@ -29,7 +29,7 @@ if ($fw) {
 
 sub probe_byteloader {
   my $out = "probe.plc";
-  # This requires the dynamic target B.so to be built before [cpan #120161]
+  # This requires the dynamic/static target C.so to be built before [cpan #120161]
   if ($] > 5.021) {
     system "$Config{make} linkext";
   }

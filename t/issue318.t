@@ -24,6 +24,6 @@ ctestok(1, 'C,-O3', 'ccode318i', $script, $todo."C $cmt");
 ctestok(2, 'CC', 'ccode318i', $script, $todo."CC $cmt");
 
 TODO: {
-   local $TODO = 'not yet';
+   local $TODO = 'not yet' if $] < 5.022;
    plctestok(3, "ccode318i", $script, "BC $cmt");
 }

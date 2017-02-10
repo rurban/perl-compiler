@@ -1,0 +1,21 @@
+version: 1.0.{build}
+skip_tags: true
+clone_depth: 1
+init:
+  - git config --global core.autocrlf input
+# Mingw and Cygwin now builtin: http://www.appveyor.com/updates/2015/05/30
+#os: MinGW
+# TODO still broken. rather try MSVC
+build_script:
+- set PATH=C:\windows\system32;C:\Perl\site\bin;C:\Perl\bin;C:\windows;C:\MinGW\bin; && perl Makefile.PL MAKE=mingw32-make
+- mingw32-make
+test_script:
+- mingw32-make
+notifications:
+- provider: Email
+  to:
+  - rurban@cpan.org
+  subject: B-C windows build
+  on_build_success: true
+  on_build_failure: true
+  on_build_status_changed: false

@@ -8,7 +8,9 @@ BEGIN {
   require TestBC;
 }
 use Test::More;
-plan ($] > 5.007003 ? (tests => 2) : (skip_all => "no NEXT on $]"));
+plan skip_all => "no NEXT on $]" if $] <= 5.007003;
+plan skip_all => "no 5.26 support yet" if $] > 5.025003;
+plan tests => 2;
 
 my $script = <<EOF;
 use mro;

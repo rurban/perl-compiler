@@ -41,6 +41,8 @@ TODO: { #2
   # also fails now with my perl5.8.9-nt, missing on File::Spec::Unix::rel2abs
   local $TODO = "B::C issue 24 dbm 5.10.0 or 5.6"
     if $] < 5.007 or $] eq '5.010000';
+  $TODO = "no 5.26 support yet" if $] > 5.025003;
+
   $result = `$runperl $Mblib blib/script/perlcc -r $O $name.pl`;
 
   if ($result =~ /No dbm on this machine/m) {
@@ -51,9 +53,10 @@ TODO: { #2
   }
 }
 
- SKIP: {
+SKIP: {
   # broken in 5.23.9. 5.23.8 not tested, 5.23.7 ok.
   skip "$] panic: corrupt saved stack index", 1 if $] > 5.023007 and !$Config{usecperl};
+   
   $result = `$runperl $Mblib blib/script/perlcc -r -O $O $name.pl`;
 
  TODO: { #3

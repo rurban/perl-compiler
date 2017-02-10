@@ -60,6 +60,7 @@ Stash/Stash.pm
 Stash/Stash.xs
 TESTS
 Todo
+appveyor.yml
 bytecode.pl
 cc_runtime.h
 hints/darwin.pl

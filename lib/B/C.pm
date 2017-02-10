@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.55_01';
+our $VERSION = '1.55_02';
 our (%debug, $check, %Config);
 BEGIN {
   require B::C::Config;
@@ -555,10 +555,9 @@ my @threadsv_names;
 
 BEGIN {
   @threadsv_names = threadsv_names();
+  # This the Carp free workaround for DynaLoader::bootstrap
+  eval 'sub DynaLoader::croak {die @_}' unless $CPERL51;
 }
-
-# This the Carp free workaround for DynaLoader::bootstrap
-sub DynaLoader::croak {die @_}
 
 # needed for init2 remap and Dynamic annotation
 sub dl_module_to_sofile {

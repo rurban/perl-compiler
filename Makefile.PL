@@ -163,7 +163,11 @@ elsif ($] > 5.015005 and $] < 5.019004) {
 }
 if ($] >= 5.025004 and !$Config{usecperl}) {
     warn "Warning:\n  B-C does not yet support new 5.26 signatures with its 3 new ops,\n"
-        ."  only cperl signatures (which are 40% faster and have 2x more features).\n\n";
+      ."  only cperl signatures (which are 40% faster and have 2x more features).\n\n";
+    unless (-d '.git') {
+        warn "$^V not yet supported!";
+        exit(1);
+    }
 }
 
 my $perlcc = File::Spec->catfile("script", "perlcc");
