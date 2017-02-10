@@ -4,8 +4,9 @@
 	and worked quite fine with Perl 5.6 and 5.8.
 
 1.56 2017-??-?? rurban
-        Support up to 5.25.6/v5.25.3c, PUSHRE replaced by SPLIT, no
+        More support up to 5.25.6/v5.25.3c, PUSHRE replaced by SPLIT, no
           xpad_cop_seq, PERL_OP_PARENT
+        Fix hints/522_patched.pl dependency on C.so [cpan #120161]
 
 1.55 2017-02-10 rurban
         * C: Support 5.24 and 5.24c (ByteLoader and CC got broken with 5.22)

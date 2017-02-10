@@ -2,6 +2,7 @@
 # run with >=5.22 to check if $have_byteloader is already probed in B::C::Config
 # and probe if not.
 # we need to run this after make to be able to use ByteLoader already
+use Config;
 
 my ($fr, $fw, $s);
 open $fr, "<", "lib/B/C/Config.pm" or die "lib/B/C/Config.pm does not exist $!";
@@ -28,6 +29,10 @@ if ($fw) {
 
 sub probe_byteloader {
   my $out = "probe.plc";
+  # This requires the dynamic target B.so to be built before [cpan #120161]
+  if ($] > 5.021) {
+    system "$Config{make} linkext";
+  }
   system "$^X -Mblib -MO=-qq,Bytecode,-H,-o$out -e'print q(ok)'";
   return "0" unless -s $out;
   my $ret = `$^X -Mblib $out`;
