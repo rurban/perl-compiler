@@ -5653,7 +5653,9 @@ sub B::AV::save {
   }
 
   my ($magic, $av_index) = ('');
-  $svsect->debug($fullname, $av->flagspv) if $debug{flags};
+  # a PADLIST is tag as an AV but does not have flagspv
+  #   another option would be to define it:  *B::PADLIST::flagspv = sub { 0 }
+  $svsect->debug($fullname, ref $av eq 'B::PADLIST' ? 0 : $av->flagspv) if $debug{flags};
   if (!$ispadlist and !$ispadnamelist) {
     my $sv_ix = $svsect->index;
     $av_index = $xpvavsect->index;
