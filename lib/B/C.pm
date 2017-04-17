@@ -2149,11 +2149,11 @@ sub padop_name {
       my $pv = $sv->can("PV") ? $sv->PV : ($t->can('PVX') ? $t->PVX : '');
       # need to fix B for SVpad_TYPEDI without formal STASH
       my $stash = (ref($t) eq 'B::PVMG' and ref($t->SvSTASH) ne 'B::SPECIAL') ? $t->SvSTASH->NAME : '';
-      return wantarray ? ($stash,$pv,$sv) : $pv;
+      return $pv;
     } elsif ($sv) {
       my $pv = $sv->PV if $sv->can("PV");
       my $stash = $sv->STASH->NAME if $sv->can("STASH");
-      return wantarray ? ($stash,$pv,$sv) : $pv;
+      return $pv;
     }
   }
 }
@@ -2163,8 +2163,7 @@ sub svop_name {
   my $cv = shift;
   my $sv;
   if ($op->can('name') and $op->name eq 'padsv') {
-    my @r = padop_name($op, $cv);
-    return wantarray ? @r : ($r[1] ? $r[1] : $r[0]);
+    return padop_name($op, $cv);
   } else {
     if (!$op->can("sv")) {
       if (ref($op) eq 'B::PMOP' and $op->pmreplroot->can("sv")) {
@@ -2188,9 +2187,9 @@ sub svop_name {
 	return $rv->STASH->NAME;
       } else {
 	if ($op->name eq 'gvsv') {
-	  return wantarray ? ($sv->STASH->NAME, $sv->NAME) : $sv->STASH->NAME.'::'.$sv->NAME;
+	  return $sv->STASH->NAME.'::'.$sv->NAME;
 	} elsif ($op->name eq 'gv') {
-	  return wantarray ? ($sv->STASH->NAME, $sv->NAME) : $sv->STASH->NAME.'::'.$sv->NAME;
+	  return $sv->STASH->NAME.'::'.$sv->NAME;
 	} else {
 	  return $sv->can('STASH') ? $sv->STASH->NAME
 	    : $sv->can('NAME') ? $sv->NAME : $sv->PV;
