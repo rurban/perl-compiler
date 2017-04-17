@@ -4973,13 +4973,14 @@ sub B::GV::save {
   my $is_special = ref($gv) eq 'B::SPECIAL';
 
   # If we come across a stash, we therefore have code using this symbol.
-  # But this does not mean that we need to save the package then.
-  # if (defined %Exporter::) should not import Exporter, it should return undef.
-  #if ( $gvname =~ m/::$/ ) {
-  #  my $package = $gvname;
-  #  $package =~ s/::$//;
-  #  mark_package($package); #wrong
-  #}
+  # If the code is loaded, then assure the package is not removed.
+  # NOTE: We're not forcing it to be loaded, we're preventing it from being removed from %INC.
+  if ( $gvname =~ m/::$/ ) {
+    my $package = $gvname;
+    $package =~ s/::$//;
+    mark_package($package); #wrong
+  }
+
   if ($fullname =~ /^(bytes|utf8)::AUTOLOAD$/) {
     $gv = force_heavy($package); # defer to run-time autoload, or compile it in?
     $sym = savesym( $gv, $sym ); # override new gv ptr to sym
