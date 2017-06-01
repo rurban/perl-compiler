@@ -78,6 +78,6 @@ print "ok";
 EOF
 # TODO
 ctestok(4, "CC", $base, $script4,
-	($B::CC::VERSION < 1.11 or $] > 5.023007)
+	$B::CC::VERSION < 1.11
 	  ? "TODO B::CC issue 55 non-local exit with last => segv"
 	  :  "non local loop exit");

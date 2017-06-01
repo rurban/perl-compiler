@@ -4,6 +4,13 @@ use File::Spec;
 use 5.006;
 use Carp;
 
+
+if ($Config{d_cplusplus}) {
+    # ByteLoader/Bytecode can but don't bother
+    print "error B-C cannot yet be compiled with C++\n";
+    exit(1);
+}
+
 my $CORE = $ENV{PERL_CORE} || grep { $_ eq 'PERL_CORE=1' } @ARGV;
 mkdir "lib/B/C" unless -d "lib/B/C";
 unless (-e 'lib/B/C/Config.pm') {
@@ -144,8 +151,7 @@ sub write_b_c_config {
 my $unicode_warning =
          "  Perl handling of new unicode identifiers - package and symbol names - \n".
 	 "  without proper TR39 handling is considered a security risc and is not fully supported.\n".
-	 "  See http://websec.github.io/unicode-security-guide/\n";
-         #"  Use cperl 5.26 instead\n\n";
+	 "  See http://websec.github.io/unicode-security-guide/\n\n";
 if ($ENV{PERL_CORE}) {
     # supress the TR39 warnings in core
 }
@@ -161,13 +167,10 @@ elsif ($] > 5.015005 and $] < 5.019004) {
          ($Config{usecperl} ? "" :
 	 "  Enable use warnings 'syscalls'.\n");
 }
-if ($] >= 5.025004 and !$Config{usecperl}) {
-    warn "Warning:\n  B-C does not yet support new 5.26 signatures with its 3 new ops,\n"
-      ."  only cperl signatures (which are 40% faster and have 2x more features).\n\n";
-    unless (-d '.git') {
-        warn "$^V not yet supported!";
-        exit(1);
-    }
+if ($] >= 5.025002 and !$Config{usecperl}) {
+    warn "Warning:\n".
+         "  B-C is not yet supported for perl-5.26, only cperl-5.26.\n".
+         "  Most old code will work though.\n";
 }
 
 my $perlcc = File::Spec->catfile("script", "perlcc");
@@ -199,22 +202,22 @@ WriteMakefile(
         "    IPC::Run:  0\n",
        ) : ()),
     ($ExtUtils::MakeMaker::VERSION gt '6.46' ?
-    ('META_MERGE' 
-     => {"recommends" =>
-         {
-          'B::Flags' => '0.15',
-          "B::Debug" => '1.16',
-          "Opcodes"  => '0.10',
-          "IPC::Run" => 0,
-         },
-         resources =>
-         {
-          license     => 'http://dev.perl.org/licenses/',
-          homepage    => 'http://www.perl-compiler.org',
-          bugtracker  => 'https://github.com/rurban/perl-compiler/issues',
-          repository  => 'https://github.com/rurban/perl-compiler/',
-         },
-        }
+    ('META_MERGE'  => {"recommends" =>
+                       {
+                        'B::Flags' => '0.15',
+                        "B::Debug" => '1.16',
+                        "Opcodes"  => '0.10',
+                        "IPC::Run" => 0,
+                       },
+                       resources =>
+                       {
+                        license     => 'http://dev.perl.org/licenses/',
+                        homepage    => 'http://www.perl-compiler.org',
+                        bugtracker  => 'http://code.google.com/p/perl-compiler/issues',
+                        repository  => 'http://perl-compiler.googlecode.com/',
+                        MailingList => 'http://groups.google.com/group/perl-compiler',
+                       },
+                      }
     ) : ()),
     SIGN  => 1,
     clean => { FILES =>
@@ -375,7 +378,7 @@ sub install_independent_comalloc {
     -d 'ptmalloc3'
       or _system('tar xfz ptmalloc3-current.tar.gz');
     chdir "ptmalloc3" or die;
-    if ($Config{useithreads}) {
+    if ($Config{useithreads}) { 
 	# linux-pthread is basically the same. linux-shared is also an option.
 	# just Solaris, SGI and HPUX need different options.
 	_system(qw(make posix));
@@ -384,7 +387,7 @@ sub install_independent_comalloc {
     }
     _system('make check');
     _system('sudo cp libptmalloc3.a /usr/lib/');
-    warn "Now you must recompile your perl with linking to this library\n";
+    warn "No you must recompile your perl with linking to this library\n";
     chdir "..";
 }
 
@@ -430,7 +433,7 @@ sub ccflags {
     # Recommended by http://www.network-theory.co.uk/docs/gccintro/gccintro_32.html
     # -ansi -pedantic -Wall -W -Wconversion -Wshadow -Wcast-qual -Wwrite-strings (-W => -WExtra)
     $ccflags .= " -ansi -pedantic -Wall -Wextra -Wconversion -Wshadow -Wcast-qual -Wwrite-strings"
-      if $Config{cc} =~ /gcc/;
+      if $Config{cc} =~ /\bgcc/ and $Config{gccversion};
 }
 
 sub depend {

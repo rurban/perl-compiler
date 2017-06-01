@@ -3,6 +3,11 @@
 #include <perl.h>
 #include <XSUB.h>
 
+#ifdef __cplusplus
+/* Static OP* initialization 2x */
+# error B-C cannot yet be compiled with C++
+#endif
+
 #ifndef PM_GETRE
 # if defined(USE_ITHREADS) && (PERL_VERSION > 8)
 #  define PM_GETRE(o)     (INT2PTR(REGEXP*,SvIVX(PL_regex_pad[(o)->op_pmoffset])))
@@ -156,7 +161,7 @@ my_runops(pTHX)
 	if (PL_debug) {
 	    if (PL_watchaddr && (*PL_watchaddr != PL_watchok))
 		PerlIO_printf(Perl_debug_log,
-			      "WARNING: %"UVxf" changed from %"UVxf" to %"UVxf"\n",
+			      "WARNING: %" UVxf " changed from %" UVxf " to %" UVxf "\n",
 			      PTR2UV(PL_watchaddr), PTR2UV(PL_watchok),
 			      PTR2UV(*PL_watchaddr));
 #if defined(DEBUGGING) \
