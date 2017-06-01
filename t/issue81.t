@@ -1,7 +1,9 @@
 #! /usr/bin/env perl
 # http://code.google.com/p/perl-compiler/issues/detail?id=81
-# store cv prototypes
-use Test::More tests => 3;
+# store cv prototypes (illegal wth cperl)
+use Test::More;
+plan skip_all => "illegal prototypes with cperl" if $^V =~ /c$/;
+plan tests => 3;
 use strict;
 BEGIN {
   unshift @INC, 't';
