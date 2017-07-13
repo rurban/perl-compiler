@@ -532,6 +532,8 @@ tests[122]='my ($p1,$p2)=(80,80);if($p1<=23&&23<=$p2){print "telnet\n";}elsif ($
 result[122]='http'
 # issue52
 tests[123]='my $x;my $y = 1;$x and $y == 2;print $y == 1 ? "ok\n" : "fail\n";'
+# issue55
+tests[124]='LOOP:{my $sub=sub{last LOOP;}; $sub->() } print "ok";'
 # issue125 DynaLoader::bootstrap_inherit [perl #119577]
 tests[125]='use Net::LibIDN; print q(ok);'
 # saving recursive functions sometimes recurses in the compiler. this not, but Moose stucks in Pod::Simple
