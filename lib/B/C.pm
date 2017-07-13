@@ -4907,7 +4907,7 @@ sub B::GV::save {
     $sym = savesym( $gv, "gv_list[$ix]" );
     warn sprintf( "Saving GV 0x%x as $sym\n", $$gv ) if $debug{gv};
   }
-  warn sprintf( "  GV %s $sym type=%d, flags=0x%x %s\n", $gv->NAME,
+  warn sprintf( "  GV *%s $sym type=%d, flags=0x%x %s\n", $gv->NAME,
                 # B::SV::SvTYPE not with 5.6
                 B::SV::SvTYPE($gv), $gv->FLAGS) if $debug{gv} and !$PERL56;
   if ($PERL510 and !$PERL5257 and $gv->FLAGS & 0x40000000) { # SVpbm_VALID
@@ -4934,6 +4934,7 @@ sub B::GV::save {
   sub Save_CV()   { 8 }
   sub Save_FORM() { 16 }
   sub Save_IO()   { 32 }
+  sub Save_ALL()  { 63 }
   if ( $filter and $filter =~ m/ :pad/ ) {
     $fancyname = cstring($filter);
     $filter = 0;
@@ -5030,9 +5031,11 @@ sub B::GV::save {
     return $sym;
   }
   elsif ($fullname eq 'main::0') { # dollar_0 already handled before, so don't overwrite it
-    $init->add(qq[$sym = gv_fetchpv($cname, $notqual, SVt_PV);]);
-    $init->add( sprintf( "SvREFCNT(%s) = $u32fmt;", $sym, $gv->REFCNT ) );
-    return $sym;
+    # only the $0 part, not @0 &0 ...
+    #$init->add(qq[$sym = gv_fetchpv($cname, $notqual, SVt_PV);]);
+    #$init->add( sprintf( "SvREFCNT(%s) = $u32fmt;", $sym, $gv->REFCNT ) );
+    $filter = Save_SV;
+    #return $sym;
   }
   elsif ($B::C::ro_inc and $fullname =~ /^main::([0-9])$/) { # ignore PV regexp captures with -O2
     $filter = Save_SV;
@@ -5085,17 +5088,14 @@ sub B::GV::save {
                   )) if $debug{gv};
       # XXX !PERL510 and OPf_COP_TEMP we need to fake PL_curcop for gp_file hackery
       $init->add("$sym = ".gv_fetchpvn($name, $gvadd, "SVt_PV").";");
-      #$init->add(qq[$sym = gv_fetchpv($name, $gvadd, SVt_PV);]);
-      $savefields = Save_HV | Save_AV | Save_SV | Save_CV | Save_FORM | Save_IO;
+      $savefields = Save_ALL;
       $gptable{0+$gp} = "GvGP($sym)";
     }
     else {
       $init->add("$sym = ".gv_fetchpvn($name, $gvadd, "SVt_PVGV").";");
-      # $init->add(qq[$sym = gv_fetchpv($name, $gvadd, SVt_PVGV);]);
     }
   } elsif (!$is_coresym) {
     $init->add("$sym = ".gv_fetchpvn($name, $gvadd, "SVt_PV").";");
-    # $init->add(qq[$sym = gv_fetchpv($name, $gvadd, SVt_PV);]);
   }
   my $gvflags = $gv->GvFLAGS;
   if ($gvflags > 256 and !$PERL510) { # $gv->GvFLAGS as U8 single byte only
