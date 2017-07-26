@@ -504,6 +504,7 @@ our %optimization_map = (
     4 => [qw(-fcop -fno-dyn-padlist)],
 );
 push @{$optimization_map{2}}, '-fcow' if $] >= 5.020;
+# skipping here: oFr which need extra logic
 our %debug_map = (
     'O' => 'op',
     'A' => 'av',
@@ -4275,7 +4276,7 @@ sub B::CV::save {
   }
 
   # XXX how is ANON with CONST handled? CONST uses XSUBANY [GH #246]
-  if ($isconst and $gv and $cvxsub and !is_phase_name($cvname) and
+  if ($isconst and $cvxsub and !is_phase_name($cvname) and
     (
       (
        $PERL522
@@ -4309,7 +4310,7 @@ sub B::CV::save {
     # TODO Attribute::Handlers #171, test 176
     if ($sv and ref($sv) and ref($sv) =~ /^(SCALAR|ARRAY|HASH|CODE|REF)$/) {
       # Save XSUBANY, maybe ARRAY or HASH also?
-      warn "SCALAR const sub $cvstashname::$cvname -> $sv\n" if $debug{cv};
+      warn "SCALAR const sub $cvstashname\::$cvname -> $sv\n" if $debug{cv};
       my $vsym = svref_2object( \$sv )->save;
       my $cvi = "cv".$cv_index++;
       $decl->add("Static CV* $cvi;");
@@ -4323,7 +4324,7 @@ sub B::CV::save {
       $init->add("$cvi = newCONSTSUB( $stsym, $name, (SV*)$vsym );");
       return savesym( $cv, $cvi );
     } else {
-      warn "Warning: Undefined const sub $cvstashname::$cvname -> $sv\n" if $verbose;
+      warn "Warning: Undefined const sub $cvstashname\::$cvname -> $sv\n" if $verbose;
     }
   }
 
@@ -4366,7 +4367,7 @@ sub B::CV::save {
     my $reloaded;
     if ($cvstashname =~ /^(bytes|utf8)$/) { # no autoload, force compile-time
       force_heavy($cvstashname);
-      $cv = svref_2object( \&{"$cvstashname\::$cvname"} );
+      $cv = svref_2object( \&{$cvstashname."::".$cvname} );
       $reloaded = 1;
     } elsif ($fullname eq 'Coro::State::_jit') { # 293
       # need to force reload the jit src
@@ -4459,7 +4460,7 @@ sub B::CV::save {
   if (!$$root) {
     if ($fullname ne 'threads::tid'
         and $fullname ne 'main::main::'
-        and ($PERL510 and !defined(&{"$cvstashname\::AUTOLOAD"})))
+        and ($PERL510 and !defined(&{$cvstashname."::AUTOLOAD"})))
     {
       # XXX What was here?
     }
@@ -5543,7 +5544,7 @@ sub B::AV::save {
   }
   elsif ($ispadlist and $] >= 5.021008) { # id+outid as U32 (PL_padlist_generation++)
     $padlistsect->comment("xpadl_max, xpadl_alloc, xpadl_id, xpadl_outid");
-    my ($id, $outid) = ($av->ID, $av->OUTID);
+    my ($id, $outid) = ($av->id, $av->outid);
     $padlistsect->add("$fill, NULL, $id, $outid");
     $padlist_index = $padlistsect->index;
     $sym = savesym( $av, "&padlist_list[$padlist_index]" );
@@ -8704,7 +8705,7 @@ sub save_main {
   set_curcv B::main_cv;
   seek( STDOUT, 0, 0 );    #exclude print statements in BEGIN{} into output
   binmode( STDOUT, ':utf8' ) unless $PERL56;
-  
+
   $verbose
     ? walkoptree_slow( main_root, "save" )
     : walkoptree( main_root, "save" );

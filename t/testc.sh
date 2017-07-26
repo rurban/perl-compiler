@@ -1440,6 +1440,15 @@ tests[4002]='use Class::XSAccessor;
 Class::XSAccessor->import(constructor => "new", accessors => [ "foo" ]);
 my $o = main::->new( foo => "ok" );
 print $o->foo,"\n";'
+tests[411]='#TODO run-time regcomp of \p{}
+our ( $q, $myre );
+BEGIN { $q = qr[\p{IsWord}] }
+eval q/$myre = qr[^$q]/; # add ^ to force the RegExp to be recompiled
+print qq[ok\n] if q[hello] =~ $myre;'
+tests[4111]='our ( $q, $myre );
+BEGIN { $q = qr[\p{IsWord}] }
+eval q/$myre = qr[$q]/; # this works
+print qq[ok\n] if q[hello] =~ $myre;'
 
 init
 

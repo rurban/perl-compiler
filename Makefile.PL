@@ -167,13 +167,12 @@ elsif ($] > 5.015005 and $] < 5.019004) {
          ($Config{usecperl} ? "" :
 	 "  Enable use warnings 'syscalls'.\n");
 }
-if ($] >= 5.025002 and !$Config{usecperl}) {
-    warn "Warning:\n".
-         "  B-C is not yet supported for perl-5.26, only cperl-5.26.\n".
-         "  Most old code will work though.\n";
-}
 
 my $perlcc = File::Spec->catfile("script", "perlcc");
+if ($CORE and $^O eq 'MSWin32') {
+    $perldll = $Config{usecperl} ? "cperl*.dll" : "perl*.dll";
+    system("copy ..\..\$perldll *.*");
+}
 
 WriteMakefile(
     NAME	 => "B::C",
@@ -187,8 +186,8 @@ WriteMakefile(
 		   'ExtUtils::Embed' => '1.25' # mandatory (missing on redhat)
                    #'B'        => '1.0901' # required but in CORE
                   },
-    'AUTHOR'   => 'Malcolm Beattie (retired), '
-	      .   'Reini Urban <perl-compiler@googlegroups.com>',
+    'AUTHOR'   => 'Reini Urban <perl-compiler@googlegroups.com>, '
+                . 'Malcolm Beattie (retired)',
     'ABSTRACT' => 'Perl compiler',
     'LICENSE'  => 'perl',
     # was in core until 5.9.5, need to update it there
@@ -225,9 +224,10 @@ WriteMakefile(
                "lib/B/Asmdata.pm script/perlcc ccode* cccode* Ccode* lib/B/C/Config.pm ".
  	       "*.core *.stackdump a.out a.exe *.cee *.c *.asm *.dbg *.plc *.obj ".
                "*.concise *~ dll.base dll.exp mod.pl pcc* *.bak *.a ".
-               "t/CORE/v5.*/*/*.bin t/CORE/v5.*/*/*.c Io_argv* t/CORE/v5.*/*/*.subtest.*.t".
-               "t/CORE/v5.*/xtestc* t/CORE/v5.*/C-COMPILED/xtestc/*.t".
-               "t/CORE/v5.*/tmp* tmp*"
+               "t/CORE/v5.*/*/*.bin t/CORE/v5.*/*/*.c Io_argv* t/CORE/v5.*/*/*.subtest.*.t ".
+               "t/CORE/v5.*/xtestc* t/CORE/v5.*/C-COMPILED/xtestc/*.t ".
+               "t/CORE/v5.*/tmp* tmp* ".
+               "perl*.dll cperl*.dll "
              },
 );
 
