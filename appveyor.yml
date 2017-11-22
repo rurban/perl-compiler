@@ -7,10 +7,12 @@ init:
 #os: MinGW
 # TODO still broken. rather try MSVC
 build_script:
-- set PATH=C:\windows\system32;C:\Perl\site\bin;C:\Perl\bin;C:\windows;C:\MinGW\bin; && perl Makefile.PL MAKE=mingw32-make
-- mingw32-make
+- set PATH=C:\windows\system32;C:\Perl\site\bin;C:\Perl\bin;C:\windows;C:\MinGW\bin
+- ppm install dmake
+- perl Makefile.PL MAKE=dmake
+- dmake
 test_script:
-- mingw32-make
+- dmake test
 notifications:
 - provider: Email
   to:
