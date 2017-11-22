@@ -5986,11 +5986,11 @@ sub B::HV::save {
     $flags &= ~SVf_PROTECT if $PERL522;
     if ($PERL514) { # fill removed with 5.13.1
       $xpvhvsect->comment( "stash mgu max keys" );
-      $xpvhvsect->add(sprintf( "Nullhv, {0}, %d, %d",
+      $xpvhvsect->add(sprintf( "Nullhv, {0}, %u, %d",
 			       $hv->MAX, 0 ));
     } else {
       $xpvhvsect->comment( "GVSTASH fill max keys MG STASH" );
-      $xpvhvsect->add(sprintf( "{0}, %d, %d, {%d}, {0}, Nullhv",
+      $xpvhvsect->add(sprintf( "{0}, %d, %u, {%d}, {0}, Nullhv",
 			       0, $hv->MAX, 0 ));
     }
     $svsect->add(sprintf("&xpvhv_list[%d], $u32fmt, 0x%x, {0}",
@@ -6000,6 +6000,7 @@ sub B::HV::save {
       $sym = sprintf("&sv_list[%d]", $svsect->index);
       my $hv_max = $hv->MAX + 1;
       # riter required, new _aux struct at the end of the HvARRAY. allocate ARRAY also.
+      my $riter = ivx($hv->RITER);
       $init->add("{\tHE **a;",
                  "#ifdef PERL_USE_LARGE_HV_ALLOC",
                  sprintf("\tNewxz(a, PERL_HV_ARRAY_ALLOC_BYTES(%d) + sizeof(struct xpvhv_aux), HE*);",
@@ -6008,12 +6009,12 @@ sub B::HV::save {
                  sprintf("\tNewxz(a, %d + sizeof(struct xpvhv_aux), HE*);", $hv_max),
                  "#endif",
 		 "\tHvARRAY($sym) = a;",
-		 sprintf("\tHvRITER_set($sym, %d);", $hv->RITER),"}");
+		 sprintf("\tHvRITER_set($sym, %s);", $riter),"}");
     }
   } # !5.10
   else {
     $xpvhvsect->comment( "array fill max keys nv mg stash riter eiter pmroot name" );
-    $xpvhvsect->add(sprintf( "0, 0, %d, 0, 0.0, 0, Nullhv, %d, 0, 0, 0",
+    $xpvhvsect->add(sprintf( "0, 0, %d, 0, 0.0, 0, Nullhv, %u, 0, 0, 0",
 			     $hv->MAX, $hv->RITER));
     $svsect->add(sprintf( "&xpvhv_list[%d], $u32fmt, 0x%x",
 			  $xpvhvsect->index, $hv->REFCNT, $hv->FLAGS));
