@@ -7,6 +7,9 @@ set breakpoint pending on
 source .gdb/perl
 
 b malloc_error_break
+b Perl_pp_multiconcat
+b XS_B__UNOP_AUX_aux_list
+
 #b perl_destruct
 #command
 #p PL_compiling

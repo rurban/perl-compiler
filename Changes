@@ -3,6 +3,9 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8.
 
+1.55_06 2017-11-24 rurban
+        Added OP_MULTICONCAT support
+
 1.55_05 2017-11-12 rurban
         Not yet for 5.26/blead, only cperl-5.26
 
