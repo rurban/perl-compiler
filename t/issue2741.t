@@ -8,7 +8,6 @@ BEGIN {
 }
 use Test::More;
 plan skip_all => 'custom op Dump since 5.19.3' if $] < 5.019003; 
-plan skip_all => "no 5.26 support yet" if $] > 5.025003;
 plan tests => 2;
 
 use B::C ();

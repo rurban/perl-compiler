@@ -4,7 +4,6 @@
 use strict;
 use Test::More;
 plan skip_all => "$] has no IO discipline" if $] < 5.006;
-plan skip_all => "no 5.26 support yet" if $] > 5.025003;
 plan tests => 1;
 BEGIN {
   unshift @INC, 't';

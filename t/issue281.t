@@ -7,13 +7,12 @@ BEGIN {
   require TestBC;
 }
 use Test::More;
-plan skip_all => "no 5.26 support yet" if $] > 5.025003;
 plan tests => 3;
 use B::C ();
 use Config;
 my $cmt = 'wrong @- values';
-# fixed with 1.45_11
-# $cmt = "TODO ".$cmt if $] >= 5.010;
+# fixed with 1.45_11 for >= 5.10
+$cmt = "TODO ".$cmt if $] > 5.025003;
 
 # was previously issue90.t test 16
 ctestok(1, 'C,-O3', 'ccode281i', <<'EOF', $cmt." #220");
