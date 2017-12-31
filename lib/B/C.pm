@@ -1272,14 +1272,17 @@ sub nvx ($) {
     $nvgformat = 'g';
   }
   my $dblmax = "1.79769313486232e+308";
+  my $ll = $Config{d_longdbl} ? "LL" : "L";
   my $ldblmax = "1.18973149535723176502e+4932";
   if ($nvgformat eq 'g') { # a very poor choice to keep precision
     # on intel 17-18, on ppc 31, on sparc64/s390 34
     # TODO: rather use the binary representation of our union
     $nvgformat = $Config{uselongdouble} ? '.18Lg' : '.17g';
   }
-  my $sval = sprintf("%${nvgformat}%s", $nvx, $nvx > $dblmax ? "L" : "");
-  $sval = sprintf("%${nvgformat}%s", $nvx, "L") if $nvx < -$dblmax;
+  my $sval = sprintf("%${nvgformat}%s", $nvx, $nvx > $dblmax ? $ll : "");
+  if ($nvx < -$dblmax) {
+    $sval = sprintf("%${nvgformat}%s", $nvx, $ll);
+  }
   if ($INC{'POSIX.pm'}) {
     if ($nvx == POSIX::DBL_MIN()) {
       $sval = "DBL_MIN";
