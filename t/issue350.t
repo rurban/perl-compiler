@@ -22,8 +22,8 @@ if ($@) {
   plan tests => 1;
 }
 
-my $DEBUGGING = ($Config::Config{ccflags} =~ m/-DDEBUGGING/);
-my $todo = ($] > 5.017 and $DEBUGGING) ? "TODO " : "";
+# my $DEBUGGING = ($Config::Config{ccflags} =~ m/-DDEBUGGING/);
+my $todo = ($] > 5.017) ? "TODO " : "";
 ctestok(1, 'C,-O3', 'ccode350i', <<'EOF', $todo.'C #350 Moose deps');
 package Foo::Moose;
 use Moose;
