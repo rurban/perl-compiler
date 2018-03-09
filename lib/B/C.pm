@@ -3449,20 +3449,30 @@ sub B::REGEXP::save {
   $cur -= length($sv->PV) - length($pv);
   my $cstr = cstring($pv);
   # Unfortunately this XPV is needed temp. Later replaced by struct regexp.
-  $xpvsect->add( sprintf( "%s{0}, %u, %u", $PERL514 ? "Nullhv, " : "", $cur, 0 ) );
+  $xpvsect->add(sprintf("%s{0}, %u, %u", $PERL514 ? "Nullhv, " : "", $cur, 0 ) );
   $svsect->add(sprintf("&xpv_list[%d], $u32fmt, 0x%x, {%s}",
 		       $xpvsect->index, $sv->REFCNT, $sv->FLAGS, $] > 5.017006 ? "NULL" : $cstr));
   my $ix = $svsect->index;
   warn "Saving RX $cstr to sv_list[$ix]\n" if $debug{rx} or $debug{sv};
+  # The SvPV field: since df6b4bd56551f2d39f7c again the PV, before the RX
+  my $rx_or_pv = (!$CPERL51 and $] < 5.027003) or ($CPERL51 and $] < 5.027002) ? 1 : 0;
+  my $initpm = $init;
   if ($] > 5.011) {
     my $pmflags = $PERL522 ? $sv->compflags : $sv->EXTFLAGS;
-    my $initpm = re_does_swash($cstr, $pmflags) ? $init1 : $init;
+    $initpm = $init1 if re_does_swash($cstr, $pmflags);
     if ($PERL518 and $sv->EXTFLAGS & RXf_EVAL_SEEN) {
       $initpm->add("PL_hints |= HINT_RE_EVAL;");
     }
-    $initpm->add(# replace sv_any->XPV with struct regexp. need pv and extflags
-               sprintf("SvANY(&sv_list[%d]) = SvANY(CALLREGCOMP(newSVpvn(%s, %d), 0x%x));",
-                       $ix, $cstr, $cur, $pmflags));
+    $initpm->add("{",
+                 sprintf("  SV* sv = newSVpvn(%s, %d);", $cstr, $cur),
+                 # replace sv_any->XPV with struct regexp. need pv and extflags
+                 sprintf("  sv_list[$ix].sv_any = SvANY(CALLREGCOMP(sv, 0x%x));",
+                         $pmflags),
+                 $rx_or_pv
+                   # and set the pv or rx field
+                   ? "  sv_list[$ix].sv_u.svu_rx = (struct regexp*)SvANY(&sv_list[$ix]);"
+                   : "  sv_list[$ix].sv_u.svu_pv = sv->sv_u.svu_pv;",
+                 "}");
     if ($PERL518 and $sv->EXTFLAGS & RXf_EVAL_SEEN) {
       $initpm->add("PL_hints &= ~HINT_RE_EVAL;");
     }
@@ -3471,15 +3481,11 @@ sub B::REGEXP::save {
     # since 5.17.6 the SvLEN stores RX_WRAPPED(rx)
     $init->add(sprintf("SvCUR(&sv_list[%d]) = %d;", $ix, $cur),
                        "SvLEN(&sv_list[$ix]) = 0;");
-  } elsif ((!$CPERL51 and $] < 5.027003)
-        or ($CPERL51 and $] < 5.027002)) {
-    $init->add("sv_list[$ix].sv_u.svu_rx = (struct regexp*)sv_list[$ix].sv_any;");
-  } else { # since df6b4bd56551f2d39f7c
-    if ($sv->FLAGS & SVt_PVLV) {
-      $init->add("{ struct regexp* rx = (struct regexp*)sv_list[$ix].sv_any;",
+  } elsif (!$rx_or_pv and $sv->FLAGS & SVt_PVLV) { # since df6b4bd56551f2d39f7c
+    # $init->add("sv_list[$ix].sv_u.svu_pv = (char*)sv_list[$ix].sv_any;");
+    $initpm->add("{ struct regexp* rx = (struct regexp*)sv_list[$ix].sv_any;",
                  "  rx->xpv_len_u.xpvlenu_rx = (struct regexp*)sv_list[$ix].sv_any;",
                  "}");
-    }
   }
   $svsect->debug( $fullname, $sv->flagspv ) if $debug{flags};
   $sym = savesym( $sv, sprintf( "&sv_list[%d]", $ix ) );
