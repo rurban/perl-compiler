@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.55_07';
+our $VERSION = '1.55_08';
 our (%debug, $check, %Config);
 BEGIN {
   require B::C::Config;
@@ -338,6 +338,8 @@ BEGIN {
      ];
     @B::PVMG::ISA = qw(B::PVNV B::RV);
   }
+  # used since 5.27.3/5.27.2c only
+  sub SVt_PVLV()  { 13 }
   sub SVf_UTF8 { 0x20000000 }
   if ($] >=  5.008001) {
     B->import(qw(SVt_PVGV CVf_WEAKOUTSIDE)); # added with 5.8.1
@@ -369,8 +371,6 @@ BEGIN {
              sub SVs_PADSTALE() { 0x0 }
             ]; # unused
     }
-    # used since 5.27.3/5.27.2c only
-    eval q[sub SVt_PVLV()  { 13 } ];
   } else {
     eval q[sub SVs_GMG()    { 0x00002000 }
            sub SVs_SMG()    { 0x00004000 }
