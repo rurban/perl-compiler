@@ -12,7 +12,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.55_07';
+our $VERSION = '1.55_08';
 our (%debug, $check, %Config);
 BEGIN {
   require B::C::Config;
@@ -3468,6 +3468,7 @@ sub B::REGEXP::save {
                  sprintf("  SV* sv = newSVpvn_flags(%s, %d, %d);", $cstr, $cur, $is_utf8),
                  # need pv and extflags
                  sprintf("  REGEXP *re = CALLREGCOMP(sv, 0x%x);", $pmflags),
+                 "  struct regexp *rx = (struct regexp *)SvANY(re);",
                  # replace sv_any->XPV with struct regexp or pv.
                  ((!$rx_or_pv and $sv->FLAGS & SVt_PVLV)
                     ? "  Copy(re, &sv_list[$ix], sizeof(REGEXP), char);"
