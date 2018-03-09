@@ -40,7 +40,7 @@ BASE=`basename $0`
 # if $] < 5.9 you may want to remove -Mblib for testing the core lib. -o
 #Mblib="`$PERL -e'print (($] < 5.009005) ? q() : q(-Mblib))'`"
 Mblib=${Mblib:--Iblib/arch -Iblib/lib} # B::C is now fully 5.6+5.8 backwards compatible
-test -n $PERL_CORE && Mblib=-I../../lib
+test -z $PERL_CORE || Mblib=-I../../lib
 v513="`$PERL -e'print (($] < 5.013005) ? q() : q(-fno-fold,-fno-warnings,))'`"
 # OCMD=${OCMD}${v513}
 if [ -z "$Mblib" ]; then
@@ -61,7 +61,7 @@ CONT=
 # rest. -DALLOW_PERL_OPTIONS for -Dtlv
 #CCMD="$PERL $Mblib script/cc_harness -g3 -DALLOW_PERL_OPTIONS"
 CCMD="$PERL $Mblib script/cc_harness"
-test -n $PERL_CORE && CCMD="$CCMD -I../.. -L../.."
+test -z $PERL_CORE || CCMD="$CCMD -I../.. -L../.."
 LCMD=
 # On some perls I also had to add $archlib/DynaLoader/DynaLoader.a to libs in Config.pm
 }
