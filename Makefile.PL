@@ -115,8 +115,9 @@ sub write_b_c_config {
     # easier hash key/value slices only came with 5.22
     for my $s (qw(archname cc ccflags
                   d_c99_variadic_macros d_dlopen d_isinf d_isnan d_longdbl dlext
-                  i_dlfcn ivdformat ivsize longsize mad nvgformat ptrsize static_ext
-                  usecperl usedl useithreads uselongdouble usemultiplicity usemymalloc uvuformat))
+                  i_dlfcn ivdformat ivsize longsize mad nvgformat ptrsize sizesize
+	          static_ext usecperl usedl useithreads uselongdouble usemultiplicity
+	          usemymalloc uvuformat))
     {
         if ($CORE) {
             my $v = $Config::Config{$s};
