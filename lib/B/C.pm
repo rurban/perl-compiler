@@ -1730,9 +1730,10 @@ sub B::UNOP_AUX::save {
   my $sym = objsym($op);
   return $sym if defined $sym;
   $level = 0 unless $level;
+  my $cvref = B::main_cv;
   my @aux_list = $op->name eq 'multideref'
     ? $op->aux_list_thr # our own version. GH#283, GH#341
-    : $op->aux_list;
+    : $op->aux_list($cvref);
   my $auxlen = scalar @aux_list;
   $auxlen = $aux_list[0] + 6 if $op->name eq 'multiconcat';
   $unopauxsect->comment("$opsect_common, first, aux");
@@ -1752,6 +1753,7 @@ sub B::UNOP_AUX::save {
       # symbolize MDEREF, SIGNATURE, MCONCAT actions and flags, just for the comments
       my $cmt = 'action';
       if ($op->name eq 'multiconcat') {
+        # TODO: test 27
         # nargs, consts, len 0, 1, ...
         if ($i == 1) {
           $nargs = $item;
