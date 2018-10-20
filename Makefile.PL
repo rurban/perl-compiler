@@ -527,7 +527,7 @@ sub install {
     my $result = shift->SUPER::install(@_);
     my $headerpath = main::headerpath();
     my $cc_runtime_h = File::Spec->catfile($headerpath, 'cc_runtime.h');
-    if ($] > 5.013007 and !-e $cc_runtime.h) {
+    if ($] > 5.013007 and !-e $cc_runtime_h) {
         $result =~ s/install :: pure_install doc_install/install :: pure_install doc_install ccinc_install/;
 	$result .= '
 ccinc_install :: $(PERL_INC)/cc_runtime.h
