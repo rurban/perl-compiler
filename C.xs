@@ -542,7 +542,6 @@ aux_list_thr(o)
                 UNOP_AUX_item *aux = cUNOP_AUXo->op_aux;
                 UNOP_AUX_item *lens;
                 char *p;
-                SV *sv;
                 STRLEN len;
                 SSize_t nargs = aux[PERL_MULTICONCAT_IX_NARGS].ssize;
 
