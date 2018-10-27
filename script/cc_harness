@@ -183,4 +183,4 @@ $ccflags .= $B::C::Config::extra_cflags;
 
 my $cccmd = "$Config{cc} $ccflags -I$coredir @ARGV $linkargs";
 print "$cccmd\n" unless $quiet;
-exec $cccmd;
+system($cccmd);
