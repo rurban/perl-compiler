@@ -3,6 +3,15 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8.
 
+1.55_10 2018-11-06 rurban
+        * C: Add missing optimize flags
+        required with -flto
+        * tests: honor and set SKIP_SLOW_TESTS, esp.
+        for -flto and resulting CI timeouts
+
+1.55_09 2018-10-21 rurban
+        * C: Extended mconcat support (aatomic)
+
 1.55_08 2018-03-09 rurban
         * C: fixed REGEXP since 5.27.3, issue 143.
         * fixed t.testc.sh PERL_CORE check
