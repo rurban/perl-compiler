@@ -443,10 +443,12 @@ sub compile_cstyle {
     $addoptions .= opt('Wb');
     if( $addoptions ) {
         $addoptions .= ',-Dfull' if opt('v') >= 6;
-        $addoptions .= ',-Dsp,-v' if opt('v') == 5;
+        if (opt('v') == 5) {
+            $addoptions .= opt('O') ? ',-DstFl,-v' : ',-DspF,-v';
+        }
         $addoptions .= ',';
     } elsif (opt('v') > 4) {
-        $addoptions = '-Dsp,-v,';
+        $addoptions = opt('O') ? '-DstFl,-v,' : '-DspF,-v,';
         $addoptions = '-Dfull,-v,' if opt('v') >= 6;
     }
     if (opt('f')) {
