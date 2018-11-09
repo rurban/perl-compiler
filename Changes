@@ -3,6 +3,9 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8.
 
+1.55_11 2018-11-?? rurban
+        * CC 1.16_02: Fixup illegal goto lab_0; (#425)
+
 1.55_10 2018-11-06 rurban
         * C: Add missing optimize flags
         required with -flto

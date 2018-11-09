@@ -292,7 +292,7 @@ Add Flags info to the code.
 
 package B::CC;
 
-our $VERSION = '1.16_02';
+our $VERSION = '1.16_03';
 
 # Start registering the L<types> namespaces.
 use strict;
@@ -674,9 +674,14 @@ PP(pp_aelem_nolval)
 }
 
 sub runtime {
-  my $line;
-  foreach $line (@_) {
-    push_runtime("\t$line");
+  foreach (@_) {
+    if (/ goto lab_0;/) {
+      my $line = $_; # readonly $_ needs a copy
+      $line =~ s/ goto lab_0;/ PUTBACK; return NULL;/;
+      push_runtime("\t$line");
+    } else {
+      push_runtime("\t$_");
+    }
   }
 }
 
