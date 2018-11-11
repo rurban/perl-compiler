@@ -8,6 +8,7 @@ BEGIN {
   require TestBC;
 }
 use Test::More;
+use Config;
 plan skip_all => "no NEXT on $]" if $] <= 5.007003;
 plan tests => 2;
 
@@ -32,7 +33,8 @@ if ($] < 5.010) {
 }
 use B::C ();
 # fixed with 1.52_17
-my $todo = ($] > 5.021 and $B::C::VERSION lt '1.52_17') ? "TODO " : "";
+my $todo = ($] > 5.021 and $B::C::VERSION lt '1.52_17')
+           ? "TODO " : "";
 
 # mro since 5.10 only
 ctestok(1, 'C,-O3', 'ccode301i', $script, $todo.'#301 next::method detection');
@@ -51,4 +53,7 @@ if ($] < 5.010) {
   $script =~ s/maybe::next::/NEXT::DISTINCT::/m;
   $script =~ s/::method/::maybe/m;
 }
+$todo = (($] > 5.021 and $B::C::VERSION lt '1.52_17')
+            or $Config{usethreads}) # flapping with 5.14.4d
+  ? "TODO thr " : "";
 ctestok(2, 'C,-O3', 'ccode326i', $script, $todo.'#326 maybe::next::method detection');
