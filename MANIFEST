@@ -120,6 +120,7 @@ ramblings/module-sizes
 ramblings/more-opts.md
 ramblings/next-steps.md
 ramblings/order_of_evaluation
+ramblings/pvcow.md
 ramblings/reg.alloc
 ramblings/remark.js
 ramblings/revert-B-load-BEGIN-514.patch
