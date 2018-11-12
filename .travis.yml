@@ -13,7 +13,7 @@ perl:
   - "5.12"
   - "5.10"
   - "5.8"
-  - "5.14-thr"
+  #- "5.14-thr"
   - "5.22-thr"
   #- "dev"
   #- "blead"
@@ -29,6 +29,8 @@ matrix:
     - perl: "5.24-dbg"
     - perl: "5.22-thr"
     - perl: "5.8"
+    - perl: "5.28.1c"
+    - perl: "5.26.4c"
     #- perl: "blead"
 
 before_install:
