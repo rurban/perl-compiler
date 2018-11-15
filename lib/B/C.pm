@@ -7644,7 +7644,10 @@ _EOT9
 	  if ($] >= 5.015003) {
 	    no strict 'refs';
 	    unless (grep /^DynaLoader$/, get_isa($stashname)) {
+              my $ro = Internals::SvREADONLY(@{$stashname."::ISA"});
+              Internals::SvREADONLY(@{$stashname."::ISA"}, 0) if $ro;
 	      push @{$stashname."::ISA"}, 'DynaLoader';
+              Internals::SvREADONLY(@{$stashname."::ISA"}, 1) if $ro;
 	      svref_2object( \@{$stashname."::ISA"} ) ->save;
 	    }
 	    warn '@',$stashname,"::ISA=(",join(",",@{$stashname."::ISA"}),")\n" if $debug{gv};
