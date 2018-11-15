@@ -4568,7 +4568,7 @@ sub B::CV::save {
       # in the PadNAMES array. So keep the empty PVCV
       warn "lexsub &".$fullname." saved as empty $sym\n" if $debug{sub};
     } else {
-      warn "Warning: &".$fullname." not found\n" if $debug{sub};
+      warn "Warning: &".$fullname." not found\n" if $fullname and $debug{sub};
       $init->add( "/* CV $fullname not found */" ) if $verbose or $debug{sub};
       # This block broke test 15, disabled
       if ($sv_ix == $svsect->index and !$new_cv_fw) { # can delete, is the last SV
@@ -7396,66 +7396,7 @@ _EOT7
     }
     $free->output( \*STDOUT, "%s\n" );
 
-    my $riter_type = "I32";
-    if ($CPERL51) {
-      $riter_type = $CPERL55 ? "U32" : "SSize_t";
-    }
-    my $hvmax_type = "STRLEN";
-    if ($CPERL51) {
-      $hvmax_type = $CPERL55 ? "U32" : "SSize_t";
-    }
-    print "#define RITER_T $riter_type\n";
-    print "#define HVMAX_T $hvmax_type\n";
-
-    print <<'_EOT7a';
-    /* Avoid Unbalanced string table refcount warning with PERL_DESTRUCT_LEVEL=2 */
-    if (s) {
-        const int i = atoi(s);
-        if (destruct_level < i) destruct_level = i;
-    }
-    if (destruct_level >= 1) {
-        const HVMAX_T max = HvMAX(PL_strtab);
-	HE * const * const array = HvARRAY(PL_strtab);
-	RITER_T riter = 0;
-	HE *hent = array[0];
-	for (;;) {
-	    if (hent) {
-		HE * const next = HeNEXT(hent);
-                if (!HEK_STATIC(&((struct shared_he*)hent)->shared_he_hek))
-                    Safefree(hent);
-		hent = next;
-	    }
-	    if (!hent) {
-		if (++riter > max)
-		    break;
-		hent = array[riter];
-	    }
-        }
-        /* Silence strtab refcnt warnings during global destruction */
-        Zero(HvARRAY(PL_strtab), max, HE*);
-        /* NULL the HEK "dfs" */
-#if PERL_VERSION > 10
-        PL_registered_mros = (HV*)&PL_sv_undef;
-        CopHINTHASH_set(&PL_compiling, NULL);
-#endif
-    }
-
-    /* B::C specific: prepend static svs to arena for sv_clean_objs */
-    if (&sv_list != (void *)PL_sv_arenaroot)
-        SvANY(&sv_list[0]) = (void *)PL_sv_arenaroot;
-    PL_sv_arenaroot = &sv_list[0];
-#if PERL_VERSION > 7
-    if (DEBUG_D_TEST) {
-        SV* sva;
-        PerlIO_printf(Perl_debug_log, "\n");
-        for (sva = PL_sv_arenaroot; sva; sva = (SV*)SvANY(sva)) {
-            PerlIO_printf(Perl_debug_log, "sv_arena: 0x%p - 0x%p (%lu)\n",
-              sva, sva+SvREFCNT(sva), (long)SvREFCNT(sva));
-        }
-    }
-#endif
-}
-_EOT7a
+    print "}\n";
   }
 }
 
@@ -8011,6 +7952,73 @@ sub output_global_destruct {
     print "    fast_perl_destruct( my_perl );\n";
   }
   else {
+
+    print <<'_EOT7';
+  {
+    volatile signed char destruct_level = PL_perl_destruct_level;
+    const char * const s = PerlEnv_getenv("PERL_DESTRUCT_LEVEL");
+_EOT7
+
+    my $riter_type = "I32";
+    if ($CPERL51) {
+      $riter_type = $CPERL55 ? "U32" : "SSize_t";
+    }
+    my $hvmax_type = "STRLEN";
+    if ($CPERL51) {
+      $hvmax_type = $CPERL55 ? "U32" : "SSize_t";
+    }
+    print "#define RITER_T $riter_type\n";
+    print "#define HVMAX_T $hvmax_type\n";
+
+    print <<'_EOT7a';
+    /* Avoid Unbalanced string table refcount warning with PERL_DESTRUCT_LEVEL=2 */
+    if (s) {
+        const int i = atoi(s);
+        if (destruct_level < i) destruct_level = i;
+    }
+    if (destruct_level >= 1) {
+        const HVMAX_T max = HvMAX(PL_strtab);
+	HE * const * const array = HvARRAY(PL_strtab);
+	RITER_T riter = 0;
+	HE *hent = array[0];
+	for (;;) {
+	    if (hent) {
+		HE * const next = HeNEXT(hent);
+                if (!HEK_STATIC(&((struct shared_he*)hent)->shared_he_hek))
+                    Safefree(hent);
+		hent = next;
+	    }
+	    if (!hent) {
+		if (++riter > max)
+		    break;
+		hent = array[riter];
+	    }
+        }
+        /* Silence strtab refcnt warnings during global destruction */
+        Zero(HvARRAY(PL_strtab), max, HE*);
+        /* NULL the HEK "dfs" */
+#if PERL_VERSION > 10
+        PL_registered_mros = (HV*)&PL_sv_undef;
+        CopHINTHASH_set(&PL_compiling, NULL);
+#endif
+    }
+
+    /* B::C specific: prepend static svs to arena for sv_clean_objs */
+    if (&sv_list != (void *)PL_sv_arenaroot)
+        SvANY(&sv_list[0]) = (void *)PL_sv_arenaroot;
+    PL_sv_arenaroot = &sv_list[0];
+#if PERL_VERSION > 7
+    if (DEBUG_D_TEST) {
+        SV* sva;
+        PerlIO_printf(Perl_debug_log, "\n");
+        for (sva = PL_sv_arenaroot; sva; sva = (SV*)SvANY(sva)) {
+            PerlIO_printf(Perl_debug_log, "sv_arena: 0x%p - 0x%p (%lu)\n",
+              sva, sva+SvREFCNT(sva), (long)SvREFCNT(sva));
+        }
+    }
+#endif
+  }
+_EOT7a
     if (defined $module and !$ITHREADS) {
       print "    perl_destruct( NULL );\n";
     } else {
