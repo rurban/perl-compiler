@@ -4,6 +4,7 @@
 #      Copyright (c) 2008, 2009, 2010, 2011 Reini Urban
 #      Copyright (c) 2010 Nick Koston
 #      Copyright (c) 2011, 2012, 2013, 2014, 2015, 2016, 2017 cPanel Inc
+#      Copyright (c) 2017, 2018 Reini Urban
 #
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
@@ -12,12 +13,12 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.55_10';
-our (%debug, $check, %Config);
+our $VERSION = '1.55_11';
+our (%debug, $check, %Config, %Cross, %OriConfig, $cross);
 BEGIN {
   require B::C::Config;
   *Config = \%B::C::Config::Config;
-  if (!keys %Config or !exists $Config{usecperl}) {
+  if (!keys %Config) { #or !exists $Config{usecperl}
     warn "Empty \%B::C::Config::Config";
     require Config;
     Config->import;
@@ -561,6 +562,35 @@ BEGIN {
   @threadsv_names = threadsv_names();
   # This the Carp free workaround for DynaLoader::bootstrap
   eval 'sub DynaLoader::croak {die @_}' unless $CPERL51;
+}
+
+sub cross_config { # overrides %B::C::Config::Config
+  my ($file) = @_;
+  -e $file or die("-cross \"$file\" not found");
+  open my $fh, "<", $file or
+    die("Could not open -cross \"$file\": $!");
+  while (<$fh>) {
+    my ($k,$v) = /^(\w+)=(.+)$/; # startperl for $^X, osname for $^O
+    next unless $k;
+    $OriConfig{$k} = $Config{$k} if exists $Config{$k};
+    if (exists $Config{$k}) {
+      if ($v =~ /^'(.*)'$/) {
+        $v = $1;
+      } elsif ($v =~ /^"(.*)"$/) {
+        $v = $1;
+      }
+      $v = '' if $v eq 'undef';
+      if ($Config{$k} ne $v) {
+        if ($k =~ /^(version|usemultiplicity|useithreads)$/) {
+          die "Invalid cross $k $v. Require $Config{$k}";
+        }
+        warn "\$Config{$k}: $Config{$k} => $v\n" if $verbose;
+        $Cross{$k} = $v;
+        $Config{$k} = $v;
+      }
+    }
+  }
+  close $fh;
 }
 
 # needed for init2 remap and Dynamic annotation
@@ -6598,7 +6628,7 @@ EOT
       if (exists $xsub{$pkg}) {
         if ($HAVE_DLFCN_DLOPEN) {
           my $ldopt = 'RTLD_NOW|RTLD_NOLOAD';
-          $ldopt = 'RTLD_NOW' if $^O =~ /bsd/i; # 351 (only on solaris and linux, not any bsd)
+          $ldopt = 'RTLD_NOW' if $Config{osname} =~ /bsd/i; # 351 (only on solaris and linux, not any bsd)
           $init2->add( "", sprintf("  handle = dlopen(%s, %s);", cstring($init2_remap{$pkg}{FILE}), $ldopt));
         }
         else {
@@ -6807,9 +6837,10 @@ EOT0
 }
 
 sub output_boilerplate {
-  my $creator = "created at ".scalar localtime()." with B::C $B::C::VERSION ";
+  my $creator = "created at ".scalar localtime()." with B::C $B::C::VERSION";
   $creator .= $B::C::REVISION if $B::C::REVISION;
-  $creator .= " for $^X";
+  $creator .= " for $Config{perlpath}";
+  $creator .= " for cross target $Config{archname}" if $cross;
   print "/* $creator */\n";
   # Store the sv_list index in sv_debug_file when debugging
   print "#define DEBUG_LEAKING_SCALARS 1\n" if $debug{flags} and $DEBUG_LEAKING_SCALARS;
@@ -7884,8 +7915,9 @@ _EOT15
            ];
     }
 
-    print sprintf(qq{    sv_setpv_mg(get_svs("\030", GV_ADD|GV_NOTQUAL), %s); /* \$^X */\n}, cstring($^X));
-    print <<"EOT";
+    print sprintf(qq{    sv_setpv_mg(get_svs("\030", GV_ADD|GV_NOTQUAL), %s); /* \$^X */\n},
+                  cstring($Config{perlpath}));
+    print <<'EOT';
     TAINT_NOT;
 
     #if PERL_VERSION < 10 || ((PERL_VERSION == 10) && (PERL_SUBVERSION < 1))
@@ -8695,8 +8727,30 @@ sub save_context {
     inc_cleanup(0);
     my $inc_gv = svref_2object( \*main::INC );
     $inc_hv    = $inc_gv->HV->save('main::INC');
-    $init->add('/* @INC */');
-    $inc_av    = $inc_gv->AV->save('main::INC');
+    if ($cross) {
+      $init->add('/* cross @INC */');
+      my @crossinc = ($Config{archlib});
+      if ($Config{archlib} ne $Config{privlib}) {
+        push @crossinc, $Config{privlib};
+      }
+      if (exists $Config{sitearch} and $Config{sitearch}) {
+        unshift @crossinc, $Config{sitearch};
+        unshift @crossinc, $Config{sitelib}
+          if $Config{sitearch} ne $Config{sitelib};
+      }
+      if (exists $Config{vendorarch} and $Config{vendorarch}) {
+        push @crossinc, $Config{vendorarch};
+        push @crossinc, $Config{vendorlib}
+          if $Config{vendorarch} ne $Config{vendorlib};
+      }
+      if ($] < 5.026 and !$Config{usecperl}) {
+        push @crossinc, '.';
+      }
+      $inc_av    = svref_2object(\@crossinc)->save('main::INC');
+    } else {
+      $init->add('/* @INC */');
+      $inc_av    = $inc_gv->AV->save('main::INC');
+    }
   }
   # ensure all included @ISA's are stored (#308), and also assign c3 (#325)
   my @saved_isa;
@@ -9062,7 +9116,11 @@ sub compile {
 
 OPTION:
   while ( $option = shift @options ) {
-    if ( $option =~ /^-(.)(.*)/ ) {
+    if ( $option =~ /^-(cross)=(.*)/ ) {
+      $opt = $1;
+      $arg = $2;
+    }
+    elsif ( $option =~ /^-(.)(.*)/ ) {
       $opt = $1;
       $arg = $2;
     }
@@ -9182,6 +9240,10 @@ OPTION:
     }
     elsif ( $opt eq "l" ) {
       $max_string_len = $arg;
+    }
+    elsif ( $opt eq "cross" ) {
+      $cross = $arg;
+      cross_config($cross); # overrides %B::C::Config::Config
     }
   }
   if (!$B::C::Config::have_independent_comalloc) {
@@ -9613,6 +9675,13 @@ exceeding that limit.
 =item B<-e ARG>
 
 Evaluate ARG at startup
+
+=item B<-cross=pathto/config.sh>
+
+Use a different C<%Config> from another F<config.sh> for
+cross-compilation.
+C<%INC> will still have the host paths, but C<@INC> and C<$^X>
+the target paths. See L<B::C::Config>.
 
 =back
 

@@ -215,6 +215,20 @@ to ensure that linked-against .so files are found at runtime too.
 
 Read about perlcc --staticxs
 
+CROSS COMPILATION
+
+Small devices often do not have enough memory or not even an installed
+compiler to compile to a compiled perl executable. In this case you
+need the target config.sh on your filesystem, and pass it as
+-cross=pathto/config.sh option to the compiler. Several host config
+values will then be replaced by its target values, so that it can be
+run on the target system with the target configuration.  Esp. for the
+target specific @INC, which must find run-time modules in its path.
+Note that the basic architecture must still match, i.e. the perl
+version and the settings for usemultiplicity and useithreads must be
+the same as on the host.  It's is strongly recommended to also have
+the same byteorder, ivsize and nvsize settings on the native host.
+
 DIFFERENCES
 
 The result of running a CC compiled Perl program can sometimes be different
