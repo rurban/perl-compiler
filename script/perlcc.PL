@@ -66,6 +66,7 @@ print OUT <<'!NO!SUBS!';
 # Version 2.21, Reini Urban, 2016-06-12
 # Version 2.22, Reini Urban, 2017-07-23
 # Version 2.23, Reini Urban, 2018-10-31
+# Version 2.24, Reini Urban, 2018-11-18 (--cross)
 
 use strict;
 use warnings;
@@ -80,7 +81,7 @@ use Cwd ();
 use Pod::Usage;
 # Time::HiRes does not work with 5.6
 use Time::HiRes qw(gettimeofday tv_interval sleep);
-our $VERSION = 2.23;
+our $VERSION = 2.24;
 $| = 1;
 eval { require B::C::Config; };
 
@@ -258,6 +259,7 @@ sub parse_argv {
         'dryrun|n',     # only print commands, do not execute
         'c',            # Compile to C only, no linking
         'check',        # pass -c to B::C and exit
+        'cross=s',      # pathto/config.sh (new since 2.24)
         'help|h',       # Help me
         'S',            # Keep generated C file
         'T',            # run the backend using perl -T
@@ -395,6 +397,9 @@ sub compile_byte {
         $opts .= '-v,';
         $opts .= '-DM,-DG,-DA,-DComment,' if opt('v') > 5;
     }
+    #if ($Options->{cross}) {
+    #    $opts .= '-cross='.$Options->{cross}.',';
+    #}
     my $command = "$BinPerl -MO=Bytecode,$opts-o$Output $Input";
     $Input =~ s/^-e.*$/-e/;
     vprint 5, "Compiling...";
@@ -456,6 +461,9 @@ sub compile_cstyle {
     }
     if (opt('check')) {
         $addoptions .= "-c,";
+    }
+    if (opt('cross')) {
+        $addoptions .= '-cross='.$Options->{cross}.',';
     }
 
     my $staticxs = opt('staticxs') ? "-staticxs," : '';
@@ -1226,6 +1234,11 @@ Compile a one-liner, much the same as C<perl -e '...'>
 
 Pass -c flag to the backend, prints all backend warnings to STDOUT
 and exits before generating and compiling code. Similar to perl -c.
+
+=item --cross pathto/config.sh
+
+Use a different C<%B::C::Config> from another F<config.sh> for
+cross-compilation. Passes -cross=path to the backend.
 
 =item -S
 
