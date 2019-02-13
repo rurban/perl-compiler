@@ -7,7 +7,7 @@ BEGIN {
   require TestBC;
 }
 use Test::More;
-plan skip_all => "no 5.26 support yet" if $] > 5.025003;
+#plan skip_all => "no 5.26 support yet" if $] > 5.025003;
 plan tests => 1;
 
 ctestok(1,'C,-O3','ccode240i',<<'EOF','#240 not repro unicode race condition with \U');

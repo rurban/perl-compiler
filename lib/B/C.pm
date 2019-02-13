@@ -7259,8 +7259,12 @@ _EOT8
     }
     if (DEBUG_D_TEST) {
         SV* sva;
-        PerlIO_printf(Perl_debug_log, "\n");
-        for (sva = PL_sv_arenaroot; sva; sva = (SV*)SvANY(sva)) {
+        PerlIO_printf(Perl_debug_log, "sv[0]: 0x%p, sv_arenaroot: 0x%p, sva->any: 0x%p\n",
+                      sv_list[0], PL_sv_arenaroot, SvANY(PL_sv_arenaroot));
+        for (sva = PL_sv_arenaroot;
+             sva;
+             sva = (sva == (SV*)SvANY(sva)) ? NULL : (SV*)SvANY(sva))
+        {
             PerlIO_printf(Perl_debug_log, "sv_arena: 0x%p - 0x%p (%lu)\n",
               sva, sva+SvREFCNT(sva), (long)SvREFCNT(sva));
         }
@@ -8003,15 +8007,16 @@ _EOT7
 #endif
     }
 
-    /* B::C specific: prepend static svs to arena for sv_clean_objs */
-    if (&sv_list != (void *)PL_sv_arenaroot)
-        SvANY(&sv_list[0]) = (void *)PL_sv_arenaroot;
-    PL_sv_arenaroot = &sv_list[0];
 #if PERL_VERSION > 7
     if (DEBUG_D_TEST) {
         SV* sva;
-        PerlIO_printf(Perl_debug_log, "\n");
-        for (sva = PL_sv_arenaroot; sva; sva = (SV*)SvANY(sva)) {
+        PerlIO_printf(Perl_debug_log, "sv[0]: 0x%p, sv_arenaroot: 0x%p, sva->any: 0x%p\n",
+                      sv_list[0], PL_sv_arenaroot, SvANY(PL_sv_arenaroot));
+        for (sva = PL_sv_arenaroot;
+             sva;
+	     /* avoid cycles */
+             sva = (sva == (SV*)SvANY(sva)) ? NULL : (SV*)SvANY(sva))
+        {
             PerlIO_printf(Perl_debug_log, "sv_arena: 0x%p - 0x%p (%lu)\n",
               sva, sva+SvREFCNT(sva), (long)SvREFCNT(sva));
         }
