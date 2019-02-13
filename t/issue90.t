@@ -24,12 +24,17 @@ sub test3 {
   if ($name eq 'ccode90i_c' and ($B::C::VERSION lt '1.42_61')) {
     $todocc = 'TODO '; #3 CC %+ includes Tie::Hash::NamedCapture
   } elsif ($name eq 'ccode90i_ca' and $] >= 5.010) {
-    $todocc = ''; #6 CC @+ fixed with 1.44
+    $todocc = ''; #6 CC @+ fixed with 1.44, broken with 1.56
+    if ($B::C::VERSION gt '1.55_11') {
+      $todoc = $todocc = 'TODO ';
+    }
+  } elsif ($name eq 'ccode90i_es' and $] >= 5.026) {
+    $todocc = 'TODO '; #9 CC %!
   #} elsif ($name eq 'ccode90i_er' and $] >= 5.010 and $Config{'useithreads'}) {
   #  $todocc = 'TODO '; #12 CC Errno loaded automagically. fixed with 1.48
   }
-  $todocc = 'TODO 5.24 ' if $] > 5.023007 and $i < 2;
-  $todoc = 'TODO 5.26 ' if $] > 5.025003 and $i < 2;
+  $todocc = 'TODO 5.24 ' if $] > 5.023007 and $i < 2 and $^V !~ /c$/;
+  $todoc = 'TODO 5.26 ' if $] > 5.025003 and $i < 2 and $^V !~ /c$/;
   
   plctestok($i*3+1, $name, $script, $todobc."BC ".$cmt);
   ctestok($i*3+2, "C,-O3", $name, $script, $todoc."C $cmt");
