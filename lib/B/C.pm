@@ -239,6 +239,7 @@ sub output {
     print $fh <<"EOT";
 static void ${init_name}_${name}(pTHX)
 {
+	dVAR;
 EOT
     foreach my $i ( @{ $section->[-1]{initav} } ) {
       print $fh "\t",$i,"\n";
@@ -532,10 +533,11 @@ my @xpvav_sizes;
 my ($max_string_len, $in_endav);
 my %static_core_pkg; # = map {$_ => 1} static_core_packages();
 
-my $MULTI = $Config{usemultiplicity};
+my $MULTI = $Config{usemultiplicity} || $Config{ccflags} =~ /-DPERL_GLOBAL_STRUCT/;
 my $ITHREADS = $Config{useithreads};
 my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
 my $DEBUG_LEAKING_SCALARS = $Config{ccflags} =~ m/-DDEBUG_LEAKING_SCALARS/;
+my $GLOBAL_STRUCT = $Config{ccflags} =~ /-DPERL_GLOBAL_STRUCT/; # includes _PRIVATE
 my $CPERL56  = ( $Config{usecperl} and $] >= 5.025003 ); #sibparent, VALID
 my $CPERL55  = ( $Config{usecperl} and $] >= 5.025001 ); #HVMAX_T, RITER_T, ...
 my $CPERL52  = ( $Config{usecperl} and $] >= 5.022002 ); #sv_objcount, AvSTATIC, sigs
@@ -2292,7 +2294,7 @@ sub nextcop {
 
 sub svimmortal {
   my $sym = shift;
-  if ($sym =~ /\(SV\*\)?\&PL_sv_(yes|no|undef|placeholder)/) {
+  if ($sym =~ /(\(SV\*\))?\&PL_sv_(yes|no|undef|placeholder|zero)/) {
     return 1;
   }
   return undef;
@@ -2336,7 +2338,7 @@ sub B::SVOP::save {
     $cv->save if $cv;
   }
   my $is_const_addr = $svsym =~ m/Null|\&/;
-  if ($MULTI and svimmortal($svsym)) { # t/testm.sh Test::Pod
+  if ($MULTI and svimmortal($svsym)) { # dVAR access. e.g. t/testm.sh Test::Pod
     $is_const_addr = 0;
   }
   $svopsect->comment("$opsect_common, sv");
@@ -4708,11 +4710,11 @@ sub B::CV::save {
   my $refcnt = $cv->REFCNT + ($PERL510 ? 1 : 0);
   # GV cannot be initialized statically
   my $xcv_outside = ${ $cv->OUTSIDE };
-  if ($xcv_outside == ${ main_cv() } and !$MULTI) {
+  if ($xcv_outside == ${ main_cv() }) {
     # Provide a temp. debugging hack for CvOUTSIDE. The address of the symbol &PL_main_cv
     # is known to the linker, the address of the value PL_main_cv not. This is set later
     # (below) at run-time.
-    $xcv_outside = '&PL_main_cv';
+    $xcv_outside = $MULTI ? '0' : '&PL_main_cv';
   } elsif (ref($cv->OUTSIDE) eq 'B::CV') {
     $xcv_outside = 0; # just a placeholder for a run-time GV
   }
@@ -6909,6 +6911,11 @@ _EOT1
 # define HEK_STATIC(hek) 0
 #endif
 
+#if defined(PERL_GLOBAL_STRUCT_PRIVATE)
+ static struct perl_vars* my_plvarsp;
+ struct perl_vars* Perl_GetVarsPrivate(void) { return my_plvarsp; }
+#endif
+
 _EOT2
 
   if ($] < 5.008008) {
@@ -6978,7 +6985,7 @@ static int fast_perl_destruct( PerlInterpreter *my_perl );
 static void my_curse( pTHX_ SV* const sv );
 
 #ifndef dVAR
-# ifdef PERL_GLOBAL_STRUCT
+# if defined(PERL_GLOBAL_STRUCT) || defined(PERL_GLOBAL_STRUCT_PRIVATE)
 #  define dVAR		pVAR    = (struct perl_vars*)PERL_GET_VARS()
 # else
 #  define dVAR		dNOOP
@@ -7022,6 +7029,7 @@ _EOT3
 PERL_STATIC_INLINE HEK *
 my_share_hek( pTHX_ const char *str, I32 len) {
     U32 hash;
+    dVAR;
     PERL_HASH(hash, str, abs(len));
     return share_hek_hek(Perl_share_hek(aTHX_ str, len, hash));
 }
@@ -7033,6 +7041,7 @@ _EOT7
 PERL_STATIC_INLINE HEK *
 my_share_hek_0( pTHX_ const char *str, I32 len) {
     U32 hash;
+    dVAR;
     PERL_HASH(hash, str, abs(len));
     return Perl_share_hek(aTHX_ str, len, hash);
 }
@@ -7342,6 +7351,7 @@ EXTERN_C void destruct_${name} ( PerlInterpreter *my_perl ) {
     print <<'_EOT7';
     volatile signed char destruct_level = PL_perl_destruct_level;
     const char * const s = PerlEnv_getenv("PERL_DESTRUCT_LEVEL");
+    dVAR;
 
     /* set all our static pv and hek to &PL_sv_undef for perl_destruct() */
 _EOT7
@@ -7413,7 +7423,7 @@ static void
 xs_init(pTHX)
 {
 	char *file = __FILE__;
-	dTARG; dSP; CV * cv;
+	dTARG; dSP; dVAR; CV * cv;
 _EOT8
   if ($CPERL51 and $debug{cv}) {
     print q{
@@ -7560,7 +7570,7 @@ _EOT9
       }
     }
     if ($staticxs) {open( XS, ">", $outfile.".lst" ) or return "$outfile.lst: $!\n"}
-    print "\tdTARG; dSP;\n";
+    print "\tdTARG; dSP; dVAR;\n";
     print "/* DynaLoader bootstrapping */\n";
     print "\tENTER;\n";
     print "\t++cxstack_ix; cxstack[cxstack_ix].blk_oldcop = PL_curcop;\n" if $xs;
@@ -7743,6 +7753,14 @@ main(int argc, char **argv, char **env)
     char **fakeargv;
     int options_count;
     PerlInterpreter *my_perl;
+
+#ifdef PERL_GLOBAL_STRUCT
+    struct perl_vars *my_vars = Perl_init_global_struct(aTHX);
+#  ifdef PERL_GLOBAL_STRUCT_PRIVATE
+    int veto;
+    my_plvarsp = my_vars;
+#  endif
+#endif
 
     PERL_SYS_INIT3(&argc,&argv,&env);
 
@@ -9079,6 +9097,7 @@ XS(boot_$cmodule)
 {
     int exitstatus;
     dXSARGS;
+    dVAR;
 EOT
     print <<'EOT' if $PERL510 and ($ITHREADS or $MULTI);
   {

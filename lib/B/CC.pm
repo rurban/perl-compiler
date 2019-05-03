@@ -690,7 +690,7 @@ sub init_pp {
   $ppname           = shift;
   $runtime_list_ref = [];
   $declare_ref      = {};
-  runtime("dSP;");
+  runtime("dVAR; dSP;");
   declare( "I32", "oldsave" );
   map { declare( "SV", "*$_" ) } qw(sv src dst left right);
   declare( "MAGIC", "*mg" );
@@ -3327,6 +3327,7 @@ sub cc_main {
 #include "XSUB.h"
 XS(boot_$cmodule)
 {
+    dVAR;
     dXSARGS;
     perl_init();
     ENTER;
