@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.52_25 8d47bfc 2015-12-01 | Update log.modules-5.022000, fixed all FAILs M
+# B::C::VERSION = 1.56 2f18f75c 2019-02-13 | Release 1.56
 # perlversion = 5.012005-nt
 # path = /usr/local/bin/perl5.12.5-nt
 # platform = linux 64bit non-threaded
@@ -32,78 +32,78 @@ pass MIME::Base64
 pass Digest
 pass Digest::MD5
 pass Sub::Uplevel
-pass URI
-pass HTML::Tagset
-pass HTML::Parser
+skip URI
+skip HTML::Tagset
+skip HTML::Parser
 pass Test::Exception
 pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-pass LWP
+skip LWP
 pass Storable
 pass base
-pass List::MoreUtils
-pass Params::Util
-pass Task::Weaken
-pass Class::Accessor
+skip List::MoreUtils
+skip Params::Util
+skip Task::Weaken
+skip Class::Accessor
 pass Test::Tester
-pass Sub::Install
+skip Sub::Install
 pass Attribute::Handlers
-pass Data::OptList
-pass Sub::Exporter
-pass Test::NoWarnings
+skip Data::OptList
+skip Sub::Exporter
+skip Test::NoWarnings
 pass version
-pass Params::Validate
-pass Sub::Name
+skip Params::Validate
+skip Sub::Name
 pass Filter::Util::Call
-pass Algorithm::C3
-pass Class::C3
-pass Scope::Guard
-pass MRO::Compat
+skip Algorithm::C3
+skip Class::C3
+skip Scope::Guard
+skip MRO::Compat
 pass Time::HiRes
-pass Class::Data::Inheritable
+skip Class::Data::Inheritable
 pass Try::Tiny
-pass Devel::GlobalDestruction
-pass Class::MOP
-pass Moose
+skip Devel::GlobalDestruction
+skip Class::MOP
+skip Moose
 pass Test::Deep
-pass Carp::Clan
+skip Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
-pass DBI
+skip DBI
 pass Time::Local
-pass IO::Scalar
-pass Sub::Identify
+skip IO::Scalar
+skip Sub::Identify
 pass Class::ISA
-pass FCGI
-pass Tree::DAG_Node
-pass Path::Class
-pass Test::Warn
+skip FCGI
+skip Tree::DAG_Node
+skip Path::Class
+skip Test::Warn
 pass Encode
-pass Variable::Magic
+skip Variable::Magic
 pass CGI
-pass B::Hooks::EndOfScope
-pass Test::Pod
-pass Digest::SHA1
-pass namespace::clean
-pass Class::Inspector
-pass Clone
-pass XML::NamespaceSupport
-pass XML::SAX
+skip B::Hooks::EndOfScope
+skip Test::Pod
+skip Digest::SHA1
+skip namespace::clean
+skip Class::Inspector
+skip Clone
+skip XML::NamespaceSupport
+skip XML::SAX
 pass YAML
-pass MooseX::Types
-pass Class::Singleton
-pass DateTime::TimeZone
-pass DateTime::Locale
-pass DateTime
-pass IO::String
-pass AppConfig
-pass UNIVERSAL::require
-pass Template::Stash
-# 100 / 100 modules tested with B-C-1.52_25 - perl-5.012005-nt
-# pass 100 / 100 (100.0%)
-# fail   0 / 100 (0.0%)
+skip MooseX::Types
+skip Class::Singleton
+skip DateTime::TimeZone
+skip DateTime::Locale
+skip DateTime
+skip IO::String
+skip AppConfig
+skip UNIVERSAL::require
+skip Template::Stash
+# c
+# pass  52 /  52 (100.0%)
+# fail   0 /  52 (0.0%)
 # todo   0 /   0 ()
-# skip   0 / 100 (0.0% not installed)
+# skip  48 / 100 (48.0% not installed)

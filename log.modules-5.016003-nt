@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.52_25 8d47bfc 2015-12-01 | Update log.modules-5.022000, fixed all FAILs M
+# B::C::VERSION = 1.56 2f18f75c 2019-02-13 | Release 1.56
 # perlversion = 5.016003-nt
 # path = /usr/local/bin/perl5.16.3-nt
 # platform = linux 64bit non-threaded
@@ -25,7 +25,7 @@ pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-fail Module::Build #TODO >= 5.16 without threads (invalid free)
+pass Module::Build #TODO 5.16 without threads (invalid free)
 pass File::Path
 pass XSLoader
 pass MIME::Base64
@@ -34,7 +34,7 @@ pass Digest::MD5
 pass Sub::Uplevel
 pass URI
 pass HTML::Tagset
-pass HTML::Parser
+skip HTML::Parser
 pass Test::Exception
 pass Net::Cmd
 pass Compress::Raw::Zlib
@@ -43,19 +43,19 @@ pass IO::Compress::Base
 pass LWP
 pass Storable
 pass base
-pass List::MoreUtils
-pass Params::Util
+skip List::MoreUtils
+skip Params::Util
 pass Task::Weaken
 pass Class::Accessor
 pass Test::Tester
 pass Sub::Install
 pass Attribute::Handlers
-pass Data::OptList
-pass Sub::Exporter
+skip Data::OptList
+skip Sub::Exporter
 pass Test::NoWarnings
 pass version
-pass Params::Validate
-pass Sub::Name
+skip Params::Validate
+skip Sub::Name
 pass Filter::Util::Call
 pass Algorithm::C3
 pass Class::C3
@@ -65,45 +65,45 @@ pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
-pass Class::MOP
-pass Moose
+skip Class::MOP
+skip Moose
 pass Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
-pass DBI
+skip DBI
 pass Time::Local
 pass IO::Scalar
-pass Sub::Identify
+skip Sub::Identify
 pass Class::ISA
-pass FCGI
+skip FCGI
 pass Tree::DAG_Node
 pass Path::Class
 pass Test::Warn
 pass Encode
-pass Variable::Magic
+skip Variable::Magic
 pass CGI
 pass B::Hooks::EndOfScope
 pass Test::Pod
-pass Digest::SHA1
+skip Digest::SHA1
 pass namespace::clean
 pass Class::Inspector
-pass Clone
+skip Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-pass MooseX::Types
+skip MooseX::Types
 pass Class::Singleton
-pass DateTime::TimeZone
-pass DateTime::Locale
-pass DateTime
+skip DateTime::TimeZone
+skip DateTime::Locale
+skip DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
-pass Template::Stash
-# 100 / 100 modules tested with B-C-1.52_25 - perl-5.016003-nt
-# pass  99 / 100 (99.0%)
-# fail   1 / 100 (1.0%)
-# todo   1 /   1 (100.0%)
-# skip   0 / 100 (0.0% not installed)
+skip Template::Stash
+# c
+# pass  80 /  80 (100.0%)
+# fail   0 /  80 (0.0%)
+# todo   1 /   0 ()
+# skip  20 / 100 (20.0% not installed)
