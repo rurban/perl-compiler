@@ -6596,7 +6596,7 @@ EOT
   output_functions();
   fixup_ppaddr();
   print "static void perl_init0(pTHX) /* fixup_ppaddr */\n{\n\t";
-  print "register int i;\n" if @{ $init0->[-1]{values} };
+  print "dVAR; register int i;\n" if @{ $init0->[-1]{values} };
   $init0->output( \*STDOUT, "\t%s\n" );
   print "};\n\n";
 
@@ -7269,7 +7269,7 @@ _EOT8
     if (DEBUG_D_TEST) {
         SV* sva;
         PerlIO_printf(Perl_debug_log, "sv[0]: 0x%p, sv_arenaroot: 0x%p, sva->any: 0x%p\n",
-                      sv_list[0], PL_sv_arenaroot, SvANY(PL_sv_arenaroot));
+                      SvANY(&sv_list[0]), PL_sv_arenaroot, SvANY(PL_sv_arenaroot));
         for (sva = PL_sv_arenaroot;
              sva;
              sva = (sva == (SV*)SvANY(sva)) ? NULL : (SV*)SvANY(sva))
@@ -8029,7 +8029,7 @@ _EOT7
     if (DEBUG_D_TEST) {
         SV* sva;
         PerlIO_printf(Perl_debug_log, "sv[0]: 0x%p, sv_arenaroot: 0x%p, sva->any: 0x%p\n",
-                      sv_list[0], PL_sv_arenaroot, SvANY(PL_sv_arenaroot));
+                      SvANY(&sv_list[0]), PL_sv_arenaroot, SvANY(PL_sv_arenaroot));
         for (sva = PL_sv_arenaroot;
              sva;
 	     /* avoid cycles */
