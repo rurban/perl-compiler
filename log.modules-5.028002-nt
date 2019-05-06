@@ -1,0 +1,27 @@
+# B::C::VERSION = 1.56 10c899f0 2019-05-05 | more log.modules
+# perlversion = 5.028002-nt
+# path = /usr/local/bin/perl5.28.2-nt
+# platform = linux 64bit non-threaded
+pass Exporter
+pass Text::Tabs
+fail Text::Wrap
+fail Test::Harness
+pass Pod::Escapes
+pass Pod::Simple
+fail IO
+fail Scalar::Util
+pass Getopt::Long
+pass Pod::Parser
+fail ExtUtils::MakeMaker
+fail Test::Simple
+fail ExtUtils::Manifest
+fail Pod::Text
+pass constant
+pass Test
+fail Data::Dumper
+fail File::Spec
+fail File::Temp
+fail ExtUtils::Install
+pass Text::ParseWords
+fail ExtUtils::CBuilder
+fail ExtUtils::ParseXS

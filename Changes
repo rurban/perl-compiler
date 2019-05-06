@@ -3,15 +3,17 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8.
 
-1.56 2019-02-12 rurban
+1.56 2019-05-06 rurban
         * CC 1.16_02: Fixup illegal goto lab_0; (#425)
         * C: Support -cross=<path/config.sh> (#428),
-        improved -m modul support, compiling to a shared lib (#340)
-        (yet untested and unused)
+        improved -m modul support compiling to a shared lib (#340)
+          (yet untested and unused),
+        add -DPERL_GLOBAL_STRUCT support,
+        fix removed _OP_SIBPARENT_FIELDNAME.
+        * skip many slow -flto tests on smokers.
 
 1.55_10 2018-11-06 rurban
-        * C: Add missing optimize flags
-        required with -flto
+        * C: Add missing optimize flags, required with -flto
         * tests: honor and set SKIP_SLOW_TESTS, esp.
         for -flto and resulting CI timeouts
 

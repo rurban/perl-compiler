@@ -1,0 +1,109 @@
+# B::C::VERSION = 1.56 80d778e8 2019-05-06 | Release 1.56 M
+# perlversion = 5.026003-nt
+# path = /usr/local/bin/perl5.26.3-nt
+# platform = linux 64bit non-threaded
+pass Exporter
+pass Text::Tabs
+skip Text::Wrap #>= 5.26 !cperl (Carp)
+skip Test::Harness #>= 5.26 !cperl (Carp)
+pass Pod::Escapes
+pass Pod::Simple
+skip IO #>= 5.26 !cperl (Carp)
+skip Scalar::Util #>= 5.26 !cperl (Carp)
+pass Getopt::Long
+pass Pod::Parser
+skip ExtUtils::MakeMaker #>= 5.26 !cperl (Carp)
+skip Test::Simple #>= 5.26 !cperl (Carp)
+skip ExtUtils::Manifest #>= 5.26 !cperl (Carp)
+skip Pod::Text #>= 5.26 !cperl (Carp)
+pass constant
+pass Test
+skip Data::Dumper #>= 5.26 !cperl (Carp)
+skip File::Spec #>= 5.26 !cperl (Carp)
+skip File::Temp #>= 5.26 !cperl (Carp)
+skip ExtUtils::Install #>= 5.26 !cperl (Carp)
+pass Text::ParseWords
+skip ExtUtils::CBuilder #>= 5.26 !cperl (Carp)
+skip ExtUtils::ParseXS #>= 5.26 !cperl (Carp)
+skip Module::Build #>= 5.26 !cperl (Carp)
+skip File::Path #>= 5.26 !cperl (Carp)
+pass XSLoader
+skip MIME::Base64 #>= 5.26 !cperl (Carp)
+pass Digest
+skip Digest::MD5 #>= 5.26 !cperl (Carp)
+pass Sub::Uplevel
+pass URI
+pass HTML::Tagset
+skip HTML::Parser #>= 5.26 !cperl (Carp)
+fail Test::Exception #TODO 5.22-5.28 !cperl invalid free
+pass Net::Cmd
+skip Compress::Raw::Zlib #>= 5.26 !cperl (Carp)
+skip Compress::Raw::Bzip2 #>= 5.26 !cperl (Carp)
+fail IO::Compress::Base
+fail LWP
+fail Storable
+pass base
+pass List::MoreUtils
+fail Params::Util
+pass Task::Weaken
+fail Class::Accessor
+fail Test::Tester #TODO 5.22-5.28 !cperl invalid free
+fail Sub::Install
+fail Attribute::Handlers
+fail Data::OptList
+fail Sub::Exporter
+fail Test::NoWarnings #TODO 5.22-5.28 !cperl invalid free
+fail version
+fail Params::Validate
+fail Sub::Name
+fail Filter::Util::Call
+pass Algorithm::C3
+fail Class::C3
+pass Scope::Guard
+skip MRO::Compat #>= 5.26 !cperl (Carp)
+skip Time::HiRes #>= 5.26 !cperl (Carp)
+pass Class::Data::Inheritable
+skip Try::Tiny #>= 5.26 !cperl (Carp)
+pass Devel::GlobalDestruction
+skip Class::MOP #>= 5.26 !cperl (Carp)
+skip Moose #>= 5.26 !cperl (Carp)
+skip Test::Deep #>= 5.26 !cperl (Carp)
+pass Carp::Clan
+skip Module::Pluggable #>= 5.26 !cperl (Carp)
+fail if(1) => "Sys::Hostname"
+pass Text::Balanced
+skip DBI #>= 5.26 !cperl (Carp)
+pass Time::Local
+skip IO::Scalar #>= 5.26 !cperl (Carp)
+skip Sub::Identify #>= 5.26 !cperl (Carp)
+pass Class::ISA
+fail FCGI
+fail Tree::DAG_Node
+fail Path::Class #TODO >= 5.18 #219 overload stringify regression
+fail Test::Warn
+fail Encode
+fail Variable::Magic
+pass CGI
+fail B::Hooks::EndOfScope
+fail Test::Pod #TODO 5.22-5.28 !cperl invalid free
+fail Digest::SHA1
+fail namespace::clean
+fail Class::Inspector
+fail Clone
+pass XML::NamespaceSupport
+fail XML::SAX
+fail YAML
+fail MooseX::Types
+pass Class::Singleton
+fail DateTime::TimeZone
+fail DateTime::Locale
+fail DateTime
+fail IO::String
+pass AppConfig
+pass UNIVERSAL::require
+fail Template::Stash
+# c
+# pass  31 /  69 (44.9%)
+# fail  38 /  69 (55.1%)
+# todo   5 /  38 (13.2%)
+# skip  31 / 100 (31.0% not installed)

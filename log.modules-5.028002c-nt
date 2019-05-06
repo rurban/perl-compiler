@@ -1,6 +1,6 @@
-# B::C::VERSION = 1.52_25 8d47bfc 2015-12-01 | Update log.modules-5.022000, fixed all FAILs
-# perlversion = 5.022000-nt
-# path = /usr/local/bin/perl5.22.0-nt
+# B::C::VERSION = 1.56 30f59e9e 2019-05-04 | fix -DD sv[0]
+# perlversion = 5.028002c-nt
+# path = /usr/local/bin/cperl5.28.2-nt
 # platform = linux 64bit non-threaded
 pass Exporter
 pass Text::Tabs
@@ -24,7 +24,7 @@ pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
 pass ExtUtils::CBuilder
-fail ExtUtils::ParseXS #TODO >= 5.18 #135 Eval-group not allowed at runtime
+pass ExtUtils::ParseXS
 pass Module::Build
 pass File::Path
 pass XSLoader
@@ -49,7 +49,7 @@ pass Task::Weaken
 pass Class::Accessor
 pass Test::Tester
 pass Sub::Install
-pass Attribute::Handlers
+pass Attribute::Handlers #TODO >= 5.23.5 SEGV
 pass Data::OptList
 pass Sub::Exporter
 pass Test::NoWarnings
@@ -65,8 +65,8 @@ pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
-pass Class::MOP
-pass Moose
+skip Class::MOP
+skip Moose
 pass Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
@@ -79,10 +79,10 @@ pass Sub::Identify
 pass Class::ISA
 pass FCGI
 pass Tree::DAG_Node
-pass Path::Class
+fail Path::Class
 pass Test::Warn
 pass Encode
-pass Variable::Magic
+skip Variable::Magic
 pass CGI
 pass B::Hooks::EndOfScope
 pass Test::Pod
@@ -93,17 +93,17 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-pass MooseX::Types
+skip MooseX::Types
 pass Class::Singleton
-pass DateTime::TimeZone
-pass DateTime::Locale
-pass DateTime
+fail DateTime::TimeZone
+fail DateTime::Locale
+skip DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.52_25 - perl-5.022000-nt
-# pass  99 / 100 (99.0%)
-# fail   1 / 100 (1.0%)
-# todo   1 /   1 (100.0%)
-# skip   0 / 100 (0.0% not installed)
+# c
+# pass  92 /  95 (96.8%)
+# fail   3 /  95 (3.2%)
+# todo   1 /   3 (33.3%)
+# skip   5 / 100 (5.0% not installed)

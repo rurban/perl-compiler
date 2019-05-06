@@ -1,7 +1,7 @@
-# B::C::VERSION = 1.56 30f59e9e 2019-05-04 | fix -DD sv[0]
-# perlversion = 5.014004
-# path = /usr/local/bin/perl5.14.4
-# platform = linux 64bit threaded
+# B::C::VERSION = 1.56 225c62908 2019-05-06 | Release 1.56
+# perlversion = 5.026005c-nt
+# path = /usr/local/bin/cperl5.26.5-nt
+# platform = darwin 64bit non-threaded
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
@@ -79,7 +79,7 @@ pass Sub::Identify
 pass Class::ISA
 pass FCGI
 pass Tree::DAG_Node
-pass Path::Class
+fail Path::Class #TODO >= 5.18 #219 overload stringify regression
 pass Test::Warn
 pass Encode
 pass Variable::Magic
@@ -95,15 +95,15 @@ pass XML::SAX
 pass YAML
 fail MooseX::Types
 pass Class::Singleton
-pass DateTime::TimeZone
-pass DateTime::Locale
-skip DateTime
+fail DateTime::TimeZone #TODO >= 5.24 cperl (stringify overload #219?)
+fail DateTime::Locale #TODO >= 5.24 cperl (stringify overload #219?)
+fail DateTime #TODO >= 5.24 cperl (stringify overload #219?)
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
-pass Template::Stash
+skip Template::Stash
 # c
-# pass  97 /  99 (98.0%)
-# fail   2 /  99 (2.0%)
-# todo   0 /   2 (0.0%)
+# pass  93 /  99 (93.9%)
+# fail   6 /  99 (6.1%)
+# todo   4 /   6 (66.7%)
 # skip   1 / 100 (1.0% not installed)

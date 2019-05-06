@@ -93,8 +93,14 @@ log.modules-5.018004
 log.modules-5.018004-nt
 log.modules-5.020003
 log.modules-5.020003-nt
-log.modules-5.022000
-log.modules-5.022000-nt
+log.modules-5.022004-nt
+log.modules-5.022005c-nt
+log.modules-5.024004-nt
+log.modules-5.024004c-nt
+log.modules-5.026003-nt
+log.modules-5.026005c-nt
+log.modules-5.028002-nt
+log.modules-5.028002c-nt
 perlcompile.pod
 perloptree.pod
 ramblings/5.22-problems.md

@@ -1,7 +1,7 @@
-# B::C::VERSION = 1.56 30f59e9e 2019-05-04 | fix -DD sv[0]
-# perlversion = 5.014004
-# path = /usr/local/bin/perl5.14.4
-# platform = linux 64bit threaded
+# B::C::VERSION = 1.56 c01670d26 2019-05-06 | Release 1.56
+# perlversion = 5.022005c-nt
+# path = /usr/local/bin/cperl5.22.5-nt
+# platform = darwin 64bit non-threaded
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
@@ -23,7 +23,7 @@ pass File::Spec
 pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-pass ExtUtils::CBuilder
+pass ExtUtils::CBuilder #TODO 5.22
 pass ExtUtils::ParseXS
 pass Module::Build
 pass File::Path
@@ -66,7 +66,7 @@ pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
 pass Class::MOP
-fail Moose
+pass Moose
 pass Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
@@ -79,13 +79,13 @@ pass Sub::Identify
 pass Class::ISA
 pass FCGI
 pass Tree::DAG_Node
-pass Path::Class
+fail Path::Class #TODO >= 5.18 #219 overload stringify regression
 pass Test::Warn
 pass Encode
 pass Variable::Magic
 pass CGI
 pass B::Hooks::EndOfScope
-pass Test::Pod
+pass Test::Pod #TODO 5.22 invalid free
 pass Digest::SHA1
 pass namespace::clean
 pass Class::Inspector
@@ -93,17 +93,17 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-fail MooseX::Types
+pass MooseX::Types
 pass Class::Singleton
-pass DateTime::TimeZone
-pass DateTime::Locale
+skip DateTime::TimeZone
+skip DateTime::Locale
 skip DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # c
-# pass  97 /  99 (98.0%)
-# fail   2 /  99 (2.0%)
-# todo   0 /   2 (0.0%)
-# skip   1 / 100 (1.0% not installed)
+# pass  96 /  97 (99.0%)
+# fail   1 /  97 (1.0%)
+# todo   3 /   1 (300.0%)
+# skip   3 / 100 (3.0% not installed)

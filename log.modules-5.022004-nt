@@ -1,7 +1,7 @@
-# B::C::VERSION = 1.56 30f59e9e 2019-05-04 | fix -DD sv[0]
-# perlversion = 5.014004
-# path = /usr/local/bin/perl5.14.4
-# platform = linux 64bit threaded
+# B::C::VERSION = 1.56 ae61cb22 2019-05-06 | WIP Release 1.56
+# perlversion = 5.022004-nt
+# path = /usr/local/bin/perl5.22.4-nt
+# platform = linux 64bit non-threaded
 pass Exporter
 pass Text::Tabs
 pass Text::Wrap
@@ -13,7 +13,7 @@ pass Scalar::Util
 pass Getopt::Long
 pass Pod::Parser
 pass ExtUtils::MakeMaker
-pass Test::Simple
+fail Test::Simple
 pass ExtUtils::Manifest
 pass Pod::Text
 pass constant
@@ -35,7 +35,7 @@ pass Sub::Uplevel
 pass URI
 pass HTML::Tagset
 pass HTML::Parser
-pass Test::Exception
+fail Test::Exception
 pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
@@ -47,12 +47,12 @@ pass List::MoreUtils
 pass Params::Util
 pass Task::Weaken
 pass Class::Accessor
-pass Test::Tester
+fail Test::Tester
 pass Sub::Install
 pass Attribute::Handlers
 pass Data::OptList
 pass Sub::Exporter
-pass Test::NoWarnings
+fail Test::NoWarnings
 pass version
 pass Params::Validate
 pass Sub::Name
@@ -66,8 +66,8 @@ pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
 pass Class::MOP
-fail Moose
-pass Test::Deep
+pass Moose
+fail Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
@@ -79,13 +79,13 @@ pass Sub::Identify
 pass Class::ISA
 pass FCGI
 pass Tree::DAG_Node
-pass Path::Class
-pass Test::Warn
+fail Path::Class
+fail Test::Warn
 pass Encode
 pass Variable::Magic
 pass CGI
 pass B::Hooks::EndOfScope
-pass Test::Pod
+fail Test::Pod
 pass Digest::SHA1
 pass namespace::clean
 pass Class::Inspector
@@ -93,17 +93,17 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-fail MooseX::Types
+pass MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
-skip DateTime
+pass DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # c
-# pass  97 /  99 (98.0%)
-# fail   2 /  99 (2.0%)
-# todo   0 /   2 (0.0%)
-# skip   1 / 100 (1.0% not installed)
+# pass  92 / 100 (92.0%)
+# fail   8 / 100 (8.0%)
+# todo   0 /   8 (0.0%)
+# skip   0 / 100 (0.0% not installed)

@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.53_08 08ccc38 2016-02-07 | Changes: memory savings for -fcow and AvSTATIC
+# B::C::VERSION = 1.56 30f59e9e 2019-05-04 | fix -DD sv[0]
 # perlversion = 5.020003-nt
 # path = /usr/local/bin/perl5.20.3-nt
 # platform = linux 64bit non-threaded
@@ -23,7 +23,7 @@ pass File::Spec
 pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-fail ExtUtils::CBuilder
+pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
 pass Module::Build
 pass File::Path
@@ -65,21 +65,21 @@ pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
-pass Class::MOP
-pass Moose
+skip Class::MOP
+skip Moose
 pass Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
 pass Text::Balanced
-fail DBI
+pass DBI
 pass Time::Local
 pass IO::Scalar
 pass Sub::Identify
 pass Class::ISA
 pass FCGI
 pass Tree::DAG_Node
-pass Path::Class
+fail Path::Class
 pass Test::Warn
 pass Encode
 pass Variable::Magic
@@ -93,17 +93,17 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-pass MooseX::Types
+skip MooseX::Types
 pass Class::Singleton
-pass DateTime::TimeZone
-pass DateTime::Locale
-pass DateTime
+fail DateTime::TimeZone
+fail DateTime::Locale
+skip DateTime
 pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.53_08 - perl-5.020003-nt
-# pass  98 / 100 (98.0%)
-# fail   2 / 100 (2.0%)
-# todo   0 /   2 (0.0%)
-# skip   0 / 100 (0.0% not installed)
+# c
+# pass  93 /  96 (96.9%)
+# fail   3 /  96 (3.1%)
+# todo   0 /   3 (0.0%)
+# skip   4 / 100 (4.0% not installed)

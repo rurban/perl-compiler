@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.53_08 08ccc38 2016-02-07 | Changes: memory savings for -fcow and AvSTATIC
+# B::C::VERSION = 1.56 30f59e9e 2019-05-04 | fix -DD sv[0]
 # perlversion = 5.018004
 # path = /usr/local/bin/perl5.18.4
 # platform = linux 64bit threaded
@@ -65,8 +65,8 @@ pass Time::HiRes
 pass Class::Data::Inheritable
 pass Try::Tiny
 pass Devel::GlobalDestruction
-pass Class::MOP
-pass Moose
+skip Class::MOP
+skip Moose
 pass Test::Deep
 pass Carp::Clan
 pass Module::Pluggable
@@ -79,7 +79,7 @@ pass Sub::Identify
 pass Class::ISA
 pass FCGI
 pass Tree::DAG_Node
-pass Path::Class
+fail Path::Class
 pass Test::Warn
 pass Encode
 pass Variable::Magic
@@ -93,7 +93,7 @@ pass Clone
 pass XML::NamespaceSupport
 pass XML::SAX
 pass YAML
-pass MooseX::Types
+skip MooseX::Types
 pass Class::Singleton
 pass DateTime::TimeZone
 pass DateTime::Locale
@@ -102,8 +102,8 @@ pass IO::String
 pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
-# 100 / 100 modules tested with B-C-1.53_08 - perl-5.018004
-# pass 100 / 100 (100.0%)
-# fail   0 / 100 (0.0%)
-# todo   0 /   0 ()
-# skip   0 / 100 (0.0% not installed)
+# c
+# pass  96 /  97 (99.0%)
+# fail   1 /  97 (1.0%)
+# todo   0 /   1 (0.0%)
+# skip   3 / 100 (3.0% not installed)

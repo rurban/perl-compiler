@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.56 2f18f75c 2019-02-13 | Release 1.56
+# B::C::VERSION = 1.56 30f59e9e 2019-05-04 | fix -DD sv[0]
 # perlversion = 5.014004-nt
 # path = /usr/local/bin/perl5.14.4-nt
 # platform = linux 64bit non-threaded
@@ -54,7 +54,7 @@ pass Data::OptList
 pass Sub::Exporter
 pass Test::NoWarnings
 pass version
-skip Params::Validate
+pass Params::Validate
 pass Sub::Name
 pass Filter::Util::Call
 pass Algorithm::C3
@@ -103,7 +103,7 @@ pass AppConfig
 pass UNIVERSAL::require
 pass Template::Stash
 # c
-# pass  99 /  99 (100.0%)
-# fail   0 /  99 (0.0%)
+# pass 100 / 100 (100.0%)
+# fail   0 / 100 (0.0%)
 # todo   0 /   0 ()
-# skip   1 / 100 (1.0% not installed)
+# skip   0 / 100 (0.0% not installed)

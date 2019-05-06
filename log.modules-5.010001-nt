@@ -1,4 +1,4 @@
-# B::C::VERSION = 1.56 2f18f75c 2019-02-13 | Release 1.56
+# B::C::VERSION = 1.56 30f59e9e 2019-05-04 | fix -DD sv[0]
 # perlversion = 5.010001-nt
 # path = /usr/local/bin/perl5.10.1-nt
 # platform = linux 64bit non-threaded
@@ -23,87 +23,87 @@ pass File::Spec
 pass File::Temp
 pass ExtUtils::Install
 pass Text::ParseWords
-fail ExtUtils::CBuilder
+pass ExtUtils::CBuilder
 pass ExtUtils::ParseXS
-fail Module::Build
+pass Module::Build
 pass File::Path
 pass XSLoader
 pass MIME::Base64
 pass Digest
 pass Digest::MD5
 pass Sub::Uplevel
-skip URI
-skip HTML::Tagset
-skip HTML::Parser
+pass URI
+pass HTML::Tagset
+pass HTML::Parser
 pass Test::Exception
 pass Net::Cmd
 pass Compress::Raw::Zlib
 pass Compress::Raw::Bzip2
 pass IO::Compress::Base
-skip LWP
+pass LWP
 pass Storable
 pass base
-skip List::MoreUtils
-skip Params::Util
-skip Task::Weaken
-skip Class::Accessor
+pass List::MoreUtils
+pass Params::Util
+pass Task::Weaken
+pass Class::Accessor
 pass Test::Tester
-skip Sub::Install
+pass Sub::Install
 pass Attribute::Handlers
-skip Data::OptList
-skip Sub::Exporter
-skip Test::NoWarnings
-fail version
-skip Params::Validate
-skip Sub::Name
+pass Data::OptList
+pass Sub::Exporter
+pass Test::NoWarnings
+pass version
+pass Params::Validate
+pass Sub::Name
 pass Filter::Util::Call
-skip Algorithm::C3
-skip Class::C3
-skip Scope::Guard
-skip MRO::Compat
+pass Algorithm::C3
+pass Class::C3
+pass Scope::Guard
+pass MRO::Compat
 pass Time::HiRes
-skip Class::Data::Inheritable
+pass Class::Data::Inheritable
 pass Try::Tiny
-skip Devel::GlobalDestruction
-skip Class::MOP
-skip Moose
+pass Devel::GlobalDestruction
+pass Class::MOP
+pass Moose
 pass Test::Deep
-skip Carp::Clan
+pass Carp::Clan
 pass Module::Pluggable
 pass if(1) => "Sys::Hostname"
-fail Text::Balanced
-skip DBI
+pass Text::Balanced
+pass DBI
 pass Time::Local
-skip IO::Scalar
-skip Sub::Identify
+pass IO::Scalar
+pass Sub::Identify
 pass Class::ISA
-skip FCGI
-skip Tree::DAG_Node
-skip Path::Class
-skip Test::Warn
+pass FCGI
+pass Tree::DAG_Node
+pass Path::Class
+pass Test::Warn
 pass Encode
-skip Variable::Magic
+pass Variable::Magic
 pass CGI
-skip B::Hooks::EndOfScope
-skip Test::Pod
-skip Digest::SHA1
-skip namespace::clean
-skip Class::Inspector
-skip Clone
-skip XML::NamespaceSupport
-skip XML::SAX
+pass B::Hooks::EndOfScope
+pass Test::Pod
+pass Digest::SHA1
+pass namespace::clean
+pass Class::Inspector
+pass Clone
+pass XML::NamespaceSupport
+pass XML::SAX
 pass YAML
-skip MooseX::Types
-skip Class::Singleton
-skip DateTime::TimeZone
-skip DateTime::Locale
-skip DateTime
-skip IO::String
-skip AppConfig
-skip UNIVERSAL::require
-skip Template::Stash
+pass MooseX::Types
+pass Class::Singleton
+pass DateTime::TimeZone
+pass DateTime::Locale
+pass DateTime
+pass IO::String
+pass AppConfig
+pass UNIVERSAL::require
+pass Template::Stash
 # c
-# pass  48 /  52 (92.3%)
-# fail   4 /  52 (7.7%)
-# todo   0 /   4 (0.0%)
-# skip  48 / 100 (48.0% not installed)
+# pass 100 / 100 (100.0%)
+# fail   0 / 100 (0.0%)
+# todo   0 /   0 ()
+# skip   0 / 100 (0.0% not installed)
