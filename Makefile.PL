@@ -403,9 +403,18 @@ sub install_independent_comalloc {
     chdir "..";
 }
 
+# cannot use t/modules.pm
 sub perlversion {
-    require 't/modules.pm';
-    return perlversion();
+  my $DEBUGGING = ($Config{ccflags} =~ m/-DDEBUGGING/);
+  my $dVAR = ($Config{ccflags} =~ m/-DPERL_GLOBAL_STRUCT/);
+  return sprintf("%1.6f%s%s%s%s", $],
+                 ($Config{usecperl} ? "c" : ""),
+                 ($DEBUGGING ? 'd' : ''),
+                 ($Config{useithreads} ? ''
+                  : $Config{usemultiplicity} ? '-m'
+                  : '-nt'),
+                 ($dVAR ? '-dVAR' : '')
+                 );
 }
 
 package MY;

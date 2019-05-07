@@ -13,7 +13,7 @@
 package B::C;
 use strict;
 
-our $VERSION = '1.56';
+our $VERSION = '1.57';
 our (%debug, $check, %Config, %Cross, %OriConfig, $cross);
 BEGIN {
   require B::C::Config;
