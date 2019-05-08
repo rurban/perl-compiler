@@ -3,6 +3,11 @@
 	The Perl compiler was in CORE from alpha4 until Perl 5.9.4
 	and worked quite fine with Perl 5.6 and 5.8.
 
+1.57_01 2019-05-08 rurban
+        * C: add dynamic_copwarn to v5.29.7+, cannot initialize
+          PL_WARN_ALL|NONE statically anymore. Not added to cperl.
+        * buildcc: pass -cw
+
 1.57 2019-05-07 rurban
         * Makefile.PL: fix wrong t/modules.pm dependency
 
