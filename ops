@@ -1,0 +1,1 @@
+{"version":1,"ops":[{"type":1,"author":{"id":"dc64d6d260e2683565fe6e13d60cfbe9fec0fa09"},"timestamp":1443098008,"metadata":{"github-id":"MDU6SXNzdWUxMDgxMjEzMzE=","github-url":"https://github.com/rurban/perl-compiler/issues/209","origin":"github"},"title":"5.22: METHOP","message":"new op type. See branch `bc522`","files":null}]}
