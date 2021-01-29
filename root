@@ -1,0 +1,1 @@
+{"version":1,"ops":[{"type":1,"author":{"id":"dc64d6d260e2683565fe6e13d60cfbe9fec0fa09"},"timestamp":1442864485,"metadata":{"github-id":"MDU6SXNzdWUxMDc1ODM5NzI=","github-url":"https://github.com/rurban/perl-compiler/issues/206","origin":"github"},"title":"gv_fetchpv =\u003e gv_fetchpvn_flags for utf8 names","message":"Similar to #205 \nFails on utf8 symbol names","files":null}]}
