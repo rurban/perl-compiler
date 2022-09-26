@@ -313,7 +313,7 @@ use B qw(main_start main_root comppadlist peekop svref_2object
   OPf_WANT_VOID OPf_WANT_SCALAR OPf_WANT_LIST OPf_WANT
   OPf_MOD OPf_STACKED OPf_SPECIAL OPpLVAL_DEFER OPpLVAL_INTRO
   OPpASSIGN_BACKWARDS OPpLVAL_INTRO OPpDEREF_AV OPpDEREF_HV
-  OPpDEREF OPpFLIP_LINENUM G_VOID G_SCALAR G_ARRAY);
+  OPpDEREF OPpFLIP_LINENUM G_VOID G_SCALAR);
 #CXt_NULL CXt_SUB CXt_EVAL CXt_SUBST CXt_BLOCK
 use B::C qw(save_unused_subs objsym init_sections mark_unused mark_skip
   output_all output_boilerplate output_main output_main_rest fixup_ppaddr
@@ -434,6 +434,12 @@ BEGIN {
     eval q[sub PMf_ONCE(){ 0x0080 }];
   } else { # 5.10. not used with <= 5.8
     eval q[sub PMf_ONCE(){ 0x0002 }];
+  }
+  if ($] >= 5.036) {
+    B->import('G_LIST');
+    eval "sub G_ARRAY {G_LIST};";
+  } else {
+    B->import('G_ARRAY');
   }
 }
 
