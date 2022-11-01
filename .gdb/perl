@@ -141,6 +141,24 @@ document sv_dump
 see `sdump sv`
 end
 
+define opt_dump
+  p/x *my_perl->Iop
+  call Perl_op_dump(my_perl, my_perl->Iop)
+end
+document opt_dump
+ => Perl_op_dump(PL_op)
+see `odump op`
+end
+
+define svt_dump
+  p/x *sv
+  call Perl_sv_dump(my_perl, sv)
+end
+document svt_dump
+ => Perl_svt_dump(sv)
+see `sdump svt`
+end
+
 define addr2sym
     if $argc == 1
         printf "[%u]: ", $arg0

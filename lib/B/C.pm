@@ -1092,7 +1092,7 @@ sub save_pv_or_rv {
       if ($static) {
 	$len = 0;
         #warn cstring($sv->PV)." $iscow $wascow";
-        if ($iscow and $PERL518) { # 5.18 COW logic
+        if ($iscow and $PERL518 and !$ITHREADS) { # 5.18 COW logic
           if ($B::C::Config::have_HEK_STATIC) {
             $iscow = 1;
             $shared_hek = 1;
@@ -1100,7 +1100,7 @@ sub save_pv_or_rv {
             $savesym = save_hek($pv,$fullname,0);
             # warn "static shared hek: $savesym";
             # $savesym =~ s/&\(HEK\)(hek\d+)/&($1.hek_key)/;
-          } elsif ($B::C::cow) {
+          } elsif ($B::C::cow and !$ITHREADS) {
             # wrong in many cases but saves a lot of memory, only do this with -O2
             $len = $cur+2;
             $pv .= "\000\001";
@@ -6990,7 +6990,18 @@ _EOT
     print <<'_EOT4';
 static int fast_perl_destruct( PerlInterpreter *my_perl );
 static void my_curse( pTHX_ SV* const sv );
+_EOT4
+  } else {
+    if (defined $module and !$ITHREADS) {
+      print "EXTERN_C void destruct_$name( );\n";
+    } else {
+      print "EXTERN_C void destruct_$name( PerlInterpreter *my_perl );\n";
+    }
+  }
 
+  if ($] >= 5.033001 or !$B::C::destruct) {
+    # PERL_GLOBAL_STRUCT was removed with 5.33.1
+    print <<'_EOT4';
 #ifndef dVAR
 # if defined(PERL_GLOBAL_STRUCT) || defined(PERL_GLOBAL_STRUCT_PRIVATE)
 #  define dVAR		pVAR    = (struct perl_vars*)PERL_GET_VARS()
@@ -6999,13 +7010,6 @@ static void my_curse( pTHX_ SV* const sv );
 # endif
 #endif
 _EOT4
-
-  } else {
-    if (defined $module and !$ITHREADS) {
-      print "EXTERN_C void destruct_$name( );\n";
-    } else {
-      print "EXTERN_C void destruct_$name( PerlInterpreter *my_perl );\n";
-    }
   }
 }
 
@@ -9389,6 +9393,8 @@ OPTION:
   }
   $B::C::save_data_fh = 1 if $] >= 5.008 and (($] < 5.009004) or $MULTI);
   $B::C::destruct = 1 if $] < 5.008 or $^O eq 'MSWin32'; # skip -ffast-destruct there
+  # skip -fcow for threaded perl since it might crash in perl_destruct(). [GH #443]
+  $B::C::cow = 0 if $ITHREADS or $MULTI;
 
   init_sections();
   foreach my $i (@eval_at_startup) {
@@ -9655,7 +9661,7 @@ Enabled with C<-O2>.
 
 Enforce static COW strings since 5.18 for most strings.
 
-Enabled with C<-O2> since 5.20.
+Enabled with C<-O2> since 5.20, if not threaded.
 
 =item B<-fconst-strings>
 
