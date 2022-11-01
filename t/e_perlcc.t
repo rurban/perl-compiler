@@ -7,7 +7,7 @@ use Config;
 my @plan;
 use File::Spec;
 BEGIN {
-    @plan = (tests => 87);
+    @plan = (tests => 90);
     push @INC, 't';
     require TestBC;
 
@@ -307,5 +307,15 @@ ok(-e $a, "=> executable");
 cleanup;
 
 #TODO: -m
+
+open F,">",$f;
+print F q(use DoesNotExist;\n);
+close F;
+eval {
+  isnt(system("$perlcc -o pcc $f $devnull"), 0, "die with missing module"); #445
+};
+ok(!-e 'pcc.c', "no pcc.c file");
+ok(!-e $a, "no executable");
+cleanup;
 
 unlink ($f);
