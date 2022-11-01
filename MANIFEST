@@ -1,9 +1,11 @@
 .gdb/dashboard
 .gdb/perl
 .gdbinit
+.github/FUNDING.yml
 .gitignore
 .perldb
 .travis.yml
+.whitesource
 Artistic
 ByteLoader/BcVersions.pod
 ByteLoader/BcVersions/Asm5_005002.pm
