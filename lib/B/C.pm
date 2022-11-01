@@ -4,7 +4,7 @@
 #      Copyright (c) 2008, 2009, 2010, 2011 Reini Urban
 #      Copyright (c) 2010 Nick Koston
 #      Copyright (c) 2011, 2012, 2013, 2014, 2015, 2016, 2017 cPanel Inc
-#      Copyright (c) 2017, 2018, 2019 Reini Urban
+#      Copyright (c) 2017, 2018, 2019, 2022 Reini Urban
 #
 #      You may distribute under the terms of either the GNU General Public
 #      License or the Artistic License, as specified in the README file.
@@ -4115,6 +4115,7 @@ sub try_isa {
 
 sub load_utf8_heavy {
     return if $savINC{"utf8_heavy.pl"};
+    return if $] >= 5.031006;
 
     require 'utf8_heavy.pl';
     mark_package('utf8_heavy.pl');
