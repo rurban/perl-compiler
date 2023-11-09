@@ -887,7 +887,7 @@ sub run_cc_test {
 
         if ($^O =~ /^(cygwin|MSWin32|msys)/) {
             if (index($command, "Win32CORE") < 0) {
-                my $archdir = $ENV{PERL_CORE} ? "../.." : $Config{archlib};
+                my $archdir = $ENV{PERL_CORE} ? "../.." : "$Config{archlib}/..";
                 my $win32core = "-L$archdir/lib/auto/Win32CORE -lWin32CORE";
                 if (-e "$archdir/lib/auto/Win32CORE/Win32CORE.a") {
                     $win32core = "$archdir/lib/auto/Win32CORE/Win32CORE.a";

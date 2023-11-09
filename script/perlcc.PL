@@ -730,7 +730,7 @@ sub cc_harness_msvc {
 
     # another ldopts bug: ensure Win32CORE gets added.
     if (index($link, "Win32CORE") < 0) {
-        my $archdir = $ENV{PERL_CORE} ? "../.." : $Config{archlib};
+        my $archdir = $ENV{PERL_CORE} ? "../.." : "$Config{archlib}/..";
         my $win32core = "-L$archdir/lib/auto/Win32CORE -lWin32CORE";
         if (-e "$archdir/lib/auto/Win32CORE/Win32CORE.a") {
             $win32core = "$archdir/lib/auto/Win32CORE/Win32CORE.a";
@@ -825,7 +825,7 @@ print OUT <<'!NO!SUBS!';
     # another ldopts bug: ensure Win32CORE gets added, before -lperl
     if (is_winlike()) {
         if (index($ldopts, "Win32CORE") < 0) {
-           my $archdir = $ENV{PERL_CORE} ? "../.." : $Config{archlib};
+           my $archdir = $ENV{PERL_CORE} ? "../.." : $Config{archlib}/..";
            my $win32core = "-L$archdir/lib/auto/Win32CORE -lWin32CORE";
            if (-e "$archdir/lib/auto/Win32CORE/Win32CORE.a") {
                $win32core = "$archdir/lib/auto/Win32CORE/Win32CORE.a";

@@ -63,7 +63,7 @@ if (grep(/^-[cES]$/, @ARGV)) { # compile-only with -c -E or -S
 # another ldopts bug: ensure Win32CORE gets added.
 if ($^O =~ /^(cygwin|MSWin32|msys)/) {
     if (index($linkargs, "Win32CORE") < 0) {
-        my $archdir = $ENV{PERL_CORE} ? "../.." : $Config{archlib};
+        my $archdir = $ENV{PERL_CORE} ? "../.." : "$Config{archlib}/..";
         my $win32core = "-L$archdir/lib/auto/Win32CORE -lWin32CORE";
         if (-e "$archdir/lib/auto/Win32CORE/Win32CORE.a") {
             $win32core = "$archdir/lib/auto/Win32CORE/Win32CORE.a";
@@ -139,7 +139,7 @@ sub cc_harness_msvc {
       $link .= " /OPT:NOREF" if $ENV{APPVEYOR} and $^O eq 'MSWin32';
     }
     if (index($link, "Win32CORE") < 0) {
-        my $archdir = $ENV{PERL_CORE} ? "../.." : $Config{archlib};
+        my $archdir = $ENV{PERL_CORE} ? "../.." : "$Config{archlib}/..";
         my $win32core = "-L$archdir/lib/auto/Win32CORE -lWin32CORE";
         if (-e "$archdir/lib/auto/Win32CORE/Win32CORE.lib") {
             $win32core = "$archdir/lib/auto/Win32CORE/Win32CORE.lib";
@@ -187,4 +187,4 @@ $ccflags .= $B::C::Config::extra_cflags;
 
 my $cccmd = "$Config{cc} $ccflags -I$coredir @ARGV $linkargs";
 print "$cccmd\n" unless $quiet;
-exec $cccmd;
+system($cccmd);
